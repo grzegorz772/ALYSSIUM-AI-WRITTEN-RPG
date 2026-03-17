@@ -5,194 +5,369 @@
 
 	const dispatch = createEventDispatcher()
 
-	function emitAnswer(heroClass: string) {
-		$game.gameData.heroClass = heroClass
+	// Stan postaci
+	let characterName = ''
+	let selectedAvatar = 'warrior' // domyślnie wojownik
+	
+	// Statystyki i pula punktów
+	const baseStats = [
+		{ key: 'strength', name: 'Strength', value: 0, icon: '⚔️' },
+		{ key: 'dexterity', name: 'Dexternity', value: 0, icon: '🏹' },
+		{ key: 'intelligence', name: 'Intelligance', value: 0, icon: '🔮' },
+		{ key: 'vitality', name: 'Vitality', value: 0, icon: '❤️' }
+	]
+	
+	let stats = [...baseStats]
+	let availablePoints = 10
+	
+	// Awatary do wyboru
+	const avatars = [
+		{ id: 'warrior', name: 'Wojownik', src: 'images/characters/warrior2.webp' },
+		{ id: 'mage', name: 'Mag', src: 'images/characters/mage2.webp' }
+	]
+
+	// Funkcja do zarządzania punktami
+	function adjustStat(statKey: string, change: number) {
+		stats = stats.map(stat => {
+			if (stat.key === statKey) {
+				const newValue = stat.value + change
+				if (newValue >= 0 && newValue <= 10) {
+					if (change > 0 && availablePoints > 0) {
+						availablePoints--
+						return { ...stat, value: newValue }
+					} else if (change < 0 && stat.value > 0) {
+						availablePoints++
+						return { ...stat, value: newValue }
+					}
+				}
+			}
+			return stat
+		})
+	}
+
+	// Reset statystyk
+	function resetStats() {
+		stats = baseStats.map(stat => ({ ...stat, value: 0 }))
+		availablePoints = 10
+	}
+
+	// Zatwierdzenie postaci
+	function emitCharacter() {
+		if (!characterName.trim() || availablePoints > 0) return
+		
+		$game.gameData = {
+			...$game.gameData,
+			name: characterName,
+			avatar: selectedAvatar,
+			stats: stats.reduce((acc, stat) => {
+				acc[stat.key] = stat.value
+				return acc
+			}, {} as Record<string, number>)
+		}
+		
 		dispatch('emittedAnswer')
 	}
 </script>
 
-<div class="class-selection">
-	<h2>Choose Your Class</h2>
+<div class="character-creation">
+	<h2>Choose Your Hero</h2>
 
-	<div class="cards-container">
-		<!-- Warrior Card -->
-		<button
-			on:click={() => emitAnswer('warrior')}
-			class="card"
-			in:fly={{ y: 20, duration: 600, delay: 100 }}
-		>
-			<div class="wrapper">
-				<img src="images/characters/warrior1.webp" class="cover-image" alt="Warrior Cover" />
-			</div>
-			<div class="card-content">
-				<h3 class="title">Warrior</h3>
-			</div>
-			<img src="images/characters/warrior2.webp" class="character" alt="Warrior Character" />
-		</button>
+	<div class="creation-container" in:fly={{ y: 20, duration: 600 }}>
+		<!-- Pole imienia -->
+		<div class="name-field">
+			<label for="hero-name">Name</label>
+			<input
+				type="text"
+				id="hero-name"
+				bind:value={characterName}
+				placeholder="Enter hero name"
+				class="name-input"
+			/>
+		</div>
 
-		<!-- Mage Card -->
-		<button
-			on:click={() => emitAnswer('mage')}
-			class="card"
-			in:fly={{ y: 20, duration: 600, delay: 200 }}
-		>
-			<div class="wrapper">
-				<img src="images/characters/mage1.webp" class="cover-image" alt="Mage Cover" />
+		<!-- Wybór awatara -->
+		<div class="avatar-selection">
+			<label>Avatar</label>
+			<div class="avatars-grid">
+				{#each avatars as avatar}
+					<button
+						class="avatar-card"
+						class:selected={selectedAvatar === avatar.id}
+						on:click={() => selectedAvatar = avatar.id}
+					>
+						<div class="avatar-wrapper">
+							<img src={avatar.src} alt={avatar.id} />
+						</div>
+					</button>
+				{/each}
 			</div>
-			<div class="card-content">
-				<h3 class="title">Mage</h3>
+		</div>
+
+		<!-- Statystyki -->
+		<div class="stats-section">
+			<label>Statistics: <span class="points-left">{availablePoints}</span> points left</label>
+			<div class="stats-list">
+				{#each stats as stat}
+					<div class="stat-row">
+						<span class="stat-name">{stat.name}</span>
+						<div class="stat-control">
+							<button
+								class="stat-btn minus"
+								on:click={() => adjustStat(stat.key, -1)}
+								disabled={stat.value <= 0}
+							>−</button>
+							<span class="stat-value">{stat.value}</span>
+							<button
+								class="stat-btn plus"
+								on:click={() => adjustStat(stat.key, 1)}
+								disabled={stat.value >= 10 || availablePoints <= 0}
+							>+</button>
+						</div>
+					</div>
+				{/each}
 			</div>
-			<img src="images/characters/mage2.webp" class="character" alt="Mage Character" />
+		</div>
+
+		<!-- Przycisk potwierdzenia -->
+		<button class="confirm-btn" on:click={emitCharacter} disabled={!characterName.trim() || availablePoints > 0}>
+			Start Adventure
 		</button>
 	</div>
 </div>
 
 <style>
-	.class-selection {
+	.character-creation {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		width: 100%;
 		height: 100%;
 		gap: var(--space-xl);
+		padding: var(--space-lg);
+		overflow-y: auto;
 	}
 
-	h2 {
-		font-family: 'MedievalSharp', serif;
-		color: var(--color-accent-gold);
-		font-size: 2rem;
-		font-weight: 500;
-		margin: 0;
-		text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-	}
-
-	.cards-container {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		gap: var(--space-xl);
-		padding: var(--space-md);
+	.creation-container {
 		width: 100%;
-		flex: 1;
-	}
-
-	.card {
-		--card-height: 300px;
-		--card-width: 200px;
-		width: var(--card-width);
-		height: var(--card-height);
-		position: relative;
+		max-width: 500px;
 		display: flex;
-		justify-content: center;
-		align-items: flex-end;
-		padding: 0 1.5rem;
-		perspective: 2500px;
-		background: transparent;
-		border: none;
-		cursor: pointer;
-		transition: transform var(--transition-normal);
+		flex-direction: column;
+		gap: var(--space-xl);
+		background: rgba(20, 15, 30, 0.4);
+		backdrop-filter: blur(10px);
+		border: 1px solid rgba(200, 180, 255, 0.1);
+		border-radius: 24px;
+		padding: var(--space-xl);
+		box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
 	}
 
-	.cover-image {
+	/* Pole imienia */
+	.name-field {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-xs);
+	}
+
+	.name-field label {
+		font-size: 0.9rem;
+		color: var(--color-text-secondary);
+		letter-spacing: 0.5px;
+		text-transform: uppercase;
+	}
+
+	.name-input {
+		background: rgba(0, 0, 0, 0.3);
+		border: 1px solid rgba(200, 180, 255, 0.2);
+		border-radius: 12px;
+		padding: 12px 16px;
+		font-size: 1rem;
+		color: white;
+		outline: none;
+		transition: all 0.2s ease;
+	}
+
+	.name-input:focus {
+		border-color: var(--color-accent-primary);
+		box-shadow: 0 0 0 2px rgba(124, 92, 224, 0.3);
+	}
+
+	.name-input::placeholder {
+		color: rgba(255, 255, 255, 0.3);
+	}
+
+	/* Wybór awatara */
+	.avatar-selection {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-sm);
+	}
+
+	.avatar-selection label {
+		font-size: 0.9rem;
+		color: var(--color-text-secondary);
+		letter-spacing: 0.5px;
+		text-transform: uppercase;
+	}
+
+	.avatars-grid {
+		display: flex;
+		gap: var(--space-md);
+		justify-content: center;
+	}
+
+	.avatar-card {
+		width: 100px;
+		height: 100px;
+		border-radius: 16px;
+		overflow: hidden;
+		border: 2px solid transparent;
+		background: transparent;
+		padding: 0;
+		cursor: pointer;
+		transition: all 0.3s ease;
+		box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+	}
+
+	.avatar-card.selected {
+		border-color: var(--color-accent-gold);
+		transform: scale(1.05);
+		box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+	}
+
+	.avatar-wrapper {
+		width: 100%;
+		height: 100%;
+		position: relative;
+	}
+
+	.avatar-wrapper img {
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-		border-radius: var(--radius-lg);
 	}
 
-	.wrapper {
-		transition: all 0.5s ease-out;
-		position: absolute;
-		width: 100%;
-		height: 100%;
-		z-index: -1;
-		border-radius: var(--radius-lg);
-		box-shadow: var(--shadow-md);
-		overflow: hidden;
-		border: 1px solid var(--color-border);
+	/* Statystyki */
+	.stats-section {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-md);
 	}
 
-	.card:hover .wrapper {
-		transform: perspective(900px) translateY(-5%) rotateX(25deg) translateZ(0);
-		box-shadow: 2px 35px 32px -8px rgba(0, 0, 0, 0.75);
-		border-color: var(--color-accent-primary);
+	.stats-section label {
+		font-size: 0.9rem;
+		color: var(--color-text-secondary);
+		letter-spacing: 0.5px;
+		text-transform: uppercase;
 	}
 
-	.wrapper::before,
-	.wrapper::after {
-		content: '';
-		opacity: 0;
-		width: 100%;
-		height: 50%;
-		transition: all 0.5s;
-		position: absolute;
-		left: 0;
-		z-index: 10;
-		pointer-events: none;
+	.points-left {
+		color: var(--color-accent-gold);
+		font-weight: bold;
+		font-size: 1.2rem;
+		margin-left: 5px;
 	}
 
-	.wrapper::before {
-		top: 0;
-		background: linear-gradient(to top, transparent 0%, rgba(0, 0, 0, 0.8) 100%);
+	.stats-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-sm);
 	}
 
-	.wrapper::after {
-		bottom: 0;
-		opacity: 1;
-		background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.8) 100%);
+	.stat-row {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 8px 12px;
+		background: rgba(0, 0, 0, 0.2);
+		border-radius: 12px;
+		border: 1px solid rgba(255, 255, 255, 0.05);
 	}
 
-	.card:hover .wrapper::before,
-	.card:hover .wrapper::after {
-		opacity: 1;
+	.stat-name {
+		font-size: 1rem;
+		color: white;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
 	}
 
-	.title {
-		width: 100%;
-		transition: transform 0.5s;
-		font-family: 'MedievalSharp', serif;
-		font-size: 1.8rem;
-		margin-bottom: 1rem;
-		color: var(--color-text-primary);
-		text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
-		position: absolute;
-		bottom: 0;
-		left: 0;
+	.stat-control {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+
+	.stat-btn {
+		width: 30px;
+		height: 30px;
+		border-radius: 8px;
+		border: none;
+		background: rgba(255, 255, 255, 0.1);
+		color: white;
+		font-size: 1.2rem;
+		font-weight: bold;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.2s ease;
+		border: 1px solid rgba(255, 255, 255, 0.1);
+	}
+
+	.stat-btn:hover:not(:disabled) {
+		background: var(--color-accent-primary);
+		transform: scale(1.1);
+	}
+
+	.stat-btn:disabled {
+		opacity: 0.3;
+		cursor: not-allowed;
+	}
+
+	.stat-value {
+		min-width: 30px;
 		text-align: center;
-		z-index: 20;
-	}
-
-	.card:hover .title {
-		transform: translate3d(0%, -50px, 100px);
+		font-size: 1.2rem;
+		font-weight: bold;
 		color: var(--color-accent-gold);
 	}
 
-	.character {
+	/* Przycisk potwierdzenia */
+	.confirm-btn {
+		background: linear-gradient(135deg, #7c5ce0, #9d7aff);
+		border: none;
+		border-radius: 40px;
+		padding: 14px 28px;
+		font-size: 1.1rem;
+		font-weight: 600;
+		color: white;
+		cursor: pointer;
+		transition: all 0.3s ease;
+		box-shadow: 0 5px 15px rgba(124, 92, 224, 0.4);
+		text-transform: uppercase;
+		letter-spacing: 1px;
+		margin-top: var(--space-md);
 		width: 100%;
-		opacity: 0;
-		transition: all 0.5s;
-		position: absolute;
-		z-index: -1;
-		pointer-events: none;
-		bottom: 0;
 	}
 
-	.card:hover .character {
-		opacity: 1;
-		transform: translate3d(0%, -20%, 100px) scale(1.1);
-		z-index: 10;
+	.confirm-btn:hover:not(:disabled) {
+		transform: translateY(-2px);
+		box-shadow: 0 10px 25px rgba(124, 92, 224, 0.6);
+	}
+
+	.confirm-btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
 	}
 
 	/* Responsive */
 	@media (max-width: 600px) {
-		.cards-container {
-			flex-direction: column;
-			gap: var(--space-lg);
+		.creation-container {
+			padding: var(--space-lg);
 		}
 
-		.card {
-			--card-height: 240px;
-			--card-width: 160px;
+		.avatar-card {
+			width: 80px;
+			height: 80px;
 		}
 	}
 </style>
