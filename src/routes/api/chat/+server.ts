@@ -23,12 +23,18 @@ FORMAT:
 }
 
 RULES:
+<<<<<<< HEAD
 Rules:
 - Always include at least 3 choices
 - story should be immersive 3rd person narrative
 - When in combat, set inCombat to true and populate enemy with {name, enemyHp, enemyMaxHp}
 - When in shop, set shopMode to shop type like "Weaponsmith" or "PotionShop" or "SpellShop"
 - NEVER include markdown code blocks or any text outside the JSON
+=======
+- at least 3 choices
+- no markdown
+- no text outside JSON
+>>>>>>> d973287 (Gemma LLM support)
 `
 
 export const POST: RequestHandler = async ({ request }) => {

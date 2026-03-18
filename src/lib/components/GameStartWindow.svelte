@@ -112,7 +112,7 @@
 							<div class="item-number">01</div>
 							<div class="item-content">
 								<div class="item-title">
-									<span class="title-main">ZERO POINT</span>
+									<span class="title-main">POINT ZERO</span>
 									<span class="title-type">[Start Game]</span>
 								</div>
 								<div class="item-description">
@@ -120,21 +120,21 @@
 								</div>
 								<div class="item-specs">
 									<div class="spec">
-										<span class="spec-icon">⚔️</span>
+										<span class="spec-icon"></span>
 										<span class="spec-bar">
 											<span class="spec-fill" style="width: 80%"></span>
 										</span>
 										<span class="spec-value">COMBAT 80%</span>
 									</div>
 									<div class="spec">
-										<span class="spec-icon">🔮</span>
+										<span class="spec-icon"></span>
 										<span class="spec-bar">
 											<span class="spec-fill" style="width: 60%"></span>
 										</span>
 										<span class="spec-value">MAGIC 60%</span>
 									</div>
 									<div class="spec">
-										<span class="spec-icon">🤖</span>
+										<span class="spec-icon"></span>
 										<span class="spec-bar">
 											<span class="spec-fill" style="width: 90%"></span>
 										</span>
