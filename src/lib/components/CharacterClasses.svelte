@@ -1,9 +1,11 @@
 <script lang="ts">
-	import { fade, fly } from 'svelte/transition'
 	import { createEventDispatcher } from 'svelte'
+	import { fade, fly } from 'svelte/transition'
 	import { game } from '../../stores'
 
 	const dispatch = createEventDispatcher()
+
+	export let worldPrompt: string | null = null
 
 	let characterName = ''
 	let selectedAvatar = 'warrior'
@@ -46,8 +48,45 @@
 		availablePoints = 10
 	}
 
+	// FUNKCJA DEBUGOWA - automatycznie wypełnia formularz
+	function fillWithTestData() {
+		characterName = 'TestPlayer_' + Math.floor(Math.random() * 1000)
+		selectedAvatar = Math.random() > 0.5 ? 'warrior' : 'mage'
+		
+		// Resetuj statystyki
+		resetStats()
+		
+		// Rozdaj wszystkie punkty (po 2-3 na każdą statystykę)
+		const pointsPerStat = [3, 2, 2, 3] // Razem 10 punktów
+		stats = stats.map((stat, index) => {
+			availablePoints -= pointsPerStat[index]
+			return { ...stat, value: pointsPerStat[index] }
+		})
+		
+		console.log('🎮 TEST MODE - Formularz wypełniony:', {
+			name: characterName,
+			avatar: selectedAvatar,
+			stats: stats.reduce((acc, stat) => {
+				acc[stat.key] = stat.value
+				return acc
+			}, {}),
+			worldPrompt
+		})
+	}
+
 	function emitCharacter() {
 		if (!characterName.trim() || availablePoints > 0) return
+		
+		// Loguj dane przed wysłaniem
+		console.log('📤 Emitting character data:', {
+			name: characterName,
+			avatar: selectedAvatar,
+			stats: stats.reduce((acc, stat) => {
+				acc[stat.key] = stat.value
+				return acc
+			}, {}),
+			worldPrompt
+		})
 		
 		$game.gameData = {
 			...$game.gameData,
@@ -56,14 +95,22 @@
 			stats: stats.reduce((acc, stat) => {
 				acc[stat.key] = stat.value
 				return acc
-			}, {} as Record<string, number>)
+			}, {} as Record<string, number>),
+			customWorldPrompt: worldPrompt
 		}
 		
-		dispatch('emittedAnswer')
+		dispatch('emittedAnswer', { 
+			worldPrompt: worldPrompt 
+		})
 	}
 </script>
 
 <div class="character-creation">
+	<!-- Przycisk debugowy - zawsze widoczny w prawym górnym rogu -->
+	<button class="debug-btn" on:click={fillWithTestData} title="Auto-fill test data">
+		⚡ TEST MODE
+	</button>
+
 	<!-- Cyberpunk Effects -->
 	<div class="grid-overlay"></div>
 	<div class="glitch-overlay"></div>
@@ -87,21 +134,6 @@
 			<div class="panel-header">
 				<div class="title-sub" style="display: contents;">// LOADING IDENTITY<div class="title-sub loading-dots"></div> //</div>
 			</div>
-			<script>
-				let dots = "";
-				const el = document.getElementById("dots");
-
-				function animateDots() {
-					if (dots.length >= 3) {
-						dots = "";
-					} else {
-						dots += ".";
-					}
-					el.textContent = dots;
-				}
-
-				setInterval(animateDots, 400);
-			</script>
 
 			<!-- Pole imienia -->
 			<div class="name-field">
@@ -173,7 +205,7 @@
 							</div>
 						</div>
 						<div class="stat-bar">
-								<div class="stat-bar-fill" style="width: {stat.value * 10}%"></div>
+							<div class="stat-bar-fill" style="width: {stat.value * 10}%"></div>
 						</div>
 					</div>
 				{/each}
@@ -183,6 +215,28 @@
 </div>
 
 <style>
+	/* Dodaj styl dla przycisku debugowego */
+	.debug-btn {
+		position: fixed;
+		top: 20px;
+		right: 20px;
+		z-index: 1000;
+		background: linear-gradient(135deg, #ff00ff, #00ffff);
+		color: black;
+		border: none;
+		padding: 8px 16px;
+		border-radius: 4px;
+		font-family: 'Share Tech Mono', monospace;
+		font-weight: bold;
+		cursor: pointer;
+		box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+		transition: all 0.3s ease;
+	}
+
+	.debug-btn:hover {
+		transform: scale(1.05);
+		box-shadow: 0 0 30px rgba(255, 0, 255, 0.8);
+	}
 	.loading-dots::after {
 		content: "";
 		display: content;

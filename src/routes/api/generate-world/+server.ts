@@ -19,22 +19,16 @@ FORMAT:
     "choices": ["Choice 1", "Choice 2", "Choice 3"],
     "enemy": {},
     "lootBox": []
-  }
+  },
+  
 }
 
 RULES:
-<<<<<<< HEAD
-Rules:
 - Always include at least 3 choices
 - story should be immersive 3rd person narrative
 - When in combat, set inCombat to true and populate enemy with {name, enemyHp, enemyMaxHp}
 - When in shop, set shopMode to shop type like "Weaponsmith" or "PotionShop" or "SpellShop"
 - NEVER include markdown code blocks or any text outside the JSON
-=======
-- at least 3 choices
-- no markdown
-- no text outside JSON
->>>>>>> d973287 (Gemma LLM support)
 `
 const worldGenerationInstruction = `
 You are a world generator for a text-based RPG game.
@@ -54,6 +48,10 @@ Return ONLY the prompt text, no explanations, no markdown, no JSON.
 export const POST: RequestHandler = async ({ request }) => {
   try {
 const { prompt, type } = await request.json()
+
+if (type === 'static_world_generation') {
+  return json({ worldPrompt: prompt })
+}
 
 let finalPrompt
 if (type === 'world_generation') {

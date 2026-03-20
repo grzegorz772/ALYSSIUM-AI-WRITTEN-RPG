@@ -41,6 +41,39 @@
 			
 			const data = await response.json()
 			generatedWorldPrompt = data.worldPrompt
+			console.log('Generated world:', generatedWorldPrompt)
+			
+		} catch (err) {
+			error = 'Failed to generate world. Try again.'
+			console.error(err)
+		} finally {
+			isGenerating = false
+		}
+	}
+	
+	async function generateStaticWorld() {
+		if (!userPrompt.trim()) {
+			error = 'Enter world description'
+			return
+		}
+		
+		isGenerating = true
+		error = ''
+		
+		try {
+			const response = await fetch('/api/generate-world', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ 
+					prompt: userPrompt,
+					type: 'static_world_generation'
+				})
+			})
+			
+			if (!response.ok) throw new Error('Generation failed')
+			
+			const data = await response.json()
+			generatedWorldPrompt = data.worldPrompt
 			
 		} catch (err) {
 			error = 'Failed to generate world. Try again.'
@@ -116,19 +149,30 @@
 					<div class="error-message">⚠ {error}</div>
 				{/if}
 				
-				<button 
-					class="generate-btn" 
-					on:click={generateWorld}
-					disabled={isGenerating || !userPrompt.trim()}
-				>
-					{#if isGenerating}
-						<span class="btn-text">GENERATING</span>
-						<span class="loading-dots">...</span>
-					{:else}
-						<span class="btn-text">GENERATE WORLD</span>
-						<span class="btn-icon">→</span>
-					{/if}
-				</button>
+				<div class="buttons-row">
+					<button 
+						class="generate-btn" 
+						on:click={generateWorld}
+						disabled={isGenerating || !userPrompt.trim()}
+					>
+						{#if isGenerating}
+							<span class="btn-text">GENERATING</span>
+							<span class="loading-dots">...</span>
+						{:else}
+							<span class="btn-text">GENERATE (AI)</span>
+							<span class="btn-icon">→</span>
+						{/if}
+					</button>
+
+					<button 
+						class="generate-btn static-btn" 
+						on:click={generateStaticWorld}
+						disabled={isGenerating || !userPrompt.trim()}
+					>
+						<span class="btn-text">USE STATIC</span>
+						<span class="btn-icon">⚡</span>
+					</button>
+				</div>
 			</div>
 		{:else}
 			<!-- Krok 2: Podgląd wygenerowanego świata -->
