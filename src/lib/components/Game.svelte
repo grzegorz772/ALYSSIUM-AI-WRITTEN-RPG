@@ -618,7 +618,7 @@ Don't forget to include at least 3 unique choices for the user to choose.`
 	<BackgroundImgs />
 
 	<div class="debug-overlay">
-		<Modal /> 
+		 
 	</div>
 
 	{#if $misc.maintenanceWindow}
@@ -724,6 +724,7 @@ Don't forget to include at least 3 unique choices for the user to choose.`
 	}
 
 	.game-container {
+		margin-top: 1rem;
 		flex: 1;
 		display: flex;
 		flex-direction: column;
@@ -736,6 +737,7 @@ Don't forget to include at least 3 unique choices for the user to choose.`
 	}
 
 	.main-content-layer {
+		padding-bottom: .3rem !important;
 		width: 95% !important;
 		padding-top: 3rem;
 		margin-left: auto;

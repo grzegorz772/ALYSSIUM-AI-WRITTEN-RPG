@@ -102,17 +102,16 @@
 	<div class="glass-content" in:fly={{ y: 30, duration: 800, easing: cubicOut }}>
 		<header class="creator-header">
 			<div class="header-main">
-				<h2 class="title">COSMOS ARCHITECT</h2>
-				<div class="badge">SYSTEM READY</div>
+				<h2 class="title">WORLD CREATOR</h2>
 			</div>
-			<p class="subtitle">Define the parameters of your reality.</p>
+			<p class="subtitle">Define your reality.</p>
 		</header>
 
 		<div class="layout-main">
 			{#if !generatedWorldPrompt}
 				<div class="input-area" in:fade={{ duration: 400 }}>
 					<div class="field-group">
-						<label for="world-prompt">FOUNDATION PROMPT</label>
+						<label for="world-prompt">Decription</label>
 						<textarea
 							id="world-prompt"
 							bind:value={userPrompt}
@@ -173,8 +172,7 @@
 				<div class="result-area" in:fade={{ duration: 400 }}>
 					<div class="protocol-card">
 						<div class="card-header">
-							<span class="tag">OUTPUT PROTOCOL</span>
-							<span class="status online">STABLE</span>
+							<span class="status online">ACCEPTED</span>
 						</div>
 						
 						<div class="scroll-container">
@@ -184,7 +182,7 @@
 						<div class="card-footer">
 							<div class="meta-item">
 								<span class="label">SOURCE:</span>
-								<span class="value">NEURAL_GEN_V2</span>
+								<span class="value">USER</span>
 							</div>
 							<div class="meta-item">
 								<span class="label">TYPE:</span>

@@ -12,10 +12,10 @@
 	let selectedAvatar = 'warrior'
 	
 	const baseStats = [
-		{ key: 'strength', name: 'STRENGTH', value: 0, icon: '⚔️' },
-		{ key: 'dexterity', name: 'DEXTERITY', value: 0, icon: '🏹' },
-		{ key: 'intelligence', name: 'INTELLIGENCE', value: 0, icon: '🔮' },
-		{ key: 'vitality', name: 'VITALITY', value: 0, icon: '❤️' }
+		{ key: 'strength', name: 'STRENGTH', value: 0, icon: '' },
+		{ key: 'dexterity', name: 'DEXTERITY', value: 0, icon: '' },
+		{ key: 'intelligence', name: 'INTELLIGENCE', value: 0, icon: '' },
+		{ key: 'vitality', name: 'VITALITY', value: 0, icon: '' }
 	]
 	
 	let stats = [...baseStats]
@@ -97,17 +97,17 @@
 	<div class="glass-content" in:fly={{ y: 30, duration: 800, easing: cubicOut }}>
 		<header class="creation-header">
 			<div class="header-main">
-				<h2 class="title">IDENTITY FORGE</h2>
-				<div class="badge">AWAITING INPUT</div>
+				<h2 class="title">Create your character</h2>
+				<div class="badge">AVATAR</div>
 			</div>
-			<p class="subtitle">Calibrate your neural signature and attributes.</p>
+			<p class="subtitle"></p>
 		</header>
 
 		<div class="creation-layout">
 			<!-- Identity Section -->
 			<section class="identity-section">
 				<div class="field-group">
-					<label for="hero-name">CODED DESIGNATION</label>
+					<label for="hero-name">IDENTITY</label>
 					<input
 						type="text"
 						id="hero-name"
@@ -118,7 +118,7 @@
 				</div>
 
 				<div class="avatar-selection">
-					<span class="section-label">VISUAL MANIFESTATION</span>
+					<span class="section-label">VISUAL AVATAR</span>
 					<div class="avatars-grid">
 						{#each avatars as avatar}
 							<button
@@ -143,7 +143,7 @@
 					<span class="label">NEURAL ENERGY</span>
 					<div class="points-display">
 						<span class="points-value" class:urgent={availablePoints <= 2}>{availablePoints}</span>
-						<span class="points-unit">U</span>
+						<span class="points-unit"> POINTS</span>
 					</div>
 				</div>
 

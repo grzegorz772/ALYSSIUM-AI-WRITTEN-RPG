@@ -111,9 +111,9 @@
 				<header class="minimal-header">
 					<div class="logo-area">
 						<h1 class="title">ALYSSIUM</h1>
-						<div class="version-badge">v0.2.0-α</div>
+						<div class="version-badge">v0.2.1-α</div>
 					</div>
-					<p class="subtitle">A Neo-Noir Narrative Experience</p>
+					<p class="subtitle">Infinite journey</p>
 				</header>
 
 				<!-- Main Menu Layout -->
@@ -122,8 +122,8 @@
 						<button class="menu-card primary" on:click={() => handleGameMode(getRandomValueFromArray([...medievalTavernStarter]))}>
 							<div class="card-content">
 								<span class="action-tag">INITIALIZE</span>
-								<h2 class="card-title">POINT ZERO</h2>
-								<p class="card-desc">Begin your journey in the post-apocalyptic simulation.</p>
+								<h2 class="card-title">Start new game</h2>
+								<p class="card-desc">Create your world and start infinite adventure</p>
 								
 								<div class="card-stats">
 									<div class="stat-item"><span class="icon">⚔️</span> 80%</div>
