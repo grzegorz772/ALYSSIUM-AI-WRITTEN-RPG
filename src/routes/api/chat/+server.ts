@@ -5,76 +5,68 @@ import { GoogleGenAI } from '@google/genai'
 
 const ai = new GoogleGenAI({ apiKey: GOOGLE_AI_API_KEY })
 
-const worldEnhancementInstruction = `
-You are a world generator for an RPG game.
+const systemInstruction = `
+You are an RPG game master.
 
-You will receive a JSON structure with placeholders "LLM" and "RND".
-Your task is to replace all placeholders with creative, immersive content:
+You MUST respond ONLY with valid JSON.
 
-- Replace "LLM" with:
-  * For names: creative, fantasy-style names (2-4 words, e.g., "Silverwind City", "Gloomroot Forest")
-  * For descriptions: atmospheric, 1-2 sentence descriptions that fit the region type
+FORMAT:
+{
+  "gameData": {
+    "placeAndTime": { "place": "Location Name", "time": "HH:MM" },
+    "story": "Narrative text",
+    "event": { "inCombat": false, "shopMode": null, "lootMode": false },
+    "choices": ["Choice 1", "Choice 2", "Choice 3"],
+    "enemy": {},
+    "lootBox": []
+  }
+}
 
-- Replace "RND" with:
-  * Realistic numeric IDs (e.g., "weapon_001", "potion_heal_003", "enemy_012")
-  * For buildings: meaningful IDs based on building type
-  * For enemies: IDs based on enemy type
-
-Keep the exact same JSON structure. Return ONLY the enhanced JSON, no explanations, no markdown.
+RULES:
+- Always include at least 3 choices
+- story should be immersive 3rd person narrative
+- When in combat, set inCombat to true and populate enemy with {name, enemyHp, enemyMaxHp}
+- When in shop, set shopMode to shop type like "Weaponsmith" or "PotionShop" or "SpellShop"
+- NEVER include markdown code blocks or any text outside the JSON
 `
 
 export const POST: RequestHandler = async ({ request }) => {
   try {
-    const { prompt, type } = await request.json()
+    const { prompt } = await request.json()
 
-    if (type !== 'world_enhancement') {
-      return json({ error: 'Invalid type' }, { status: 400 })
+    if (!prompt) {
+        return json({ error: 'Invalid prompt' }, { status: 400 })
     }
 
     const finalPrompt = `
-${worldEnhancementInstruction}
+${systemInstruction}
 
-Here is the world JSON to enhance:
-
+USER INPUT:
 ${prompt}
 
-Return ONLY the enhanced JSON.
+Remember: JSON only.
 `
 
     const response = await ai.models.generateContent({
-      model: 'gemma-3-27b-it',
-      contents: finalPrompt
+        model: 'gemma-3-27b-it',
+        contents: finalPrompt
     })
 
-    const responseText = response.text || ''
+    const responseText = response.text || '';
 
-    console.log('World enhancement response received')
-
-    // Wyczyść odpowiedź z markdown
-    let cleanText = responseText
-      .replace(/```json\s*/g, '')
-      .replace(/```\s*/g, '')
-      .trim()
-
-    // Znajdź pierwszy { i ostatni }
-    const firstBrace = cleanText.indexOf('{')
-    const lastBrace = cleanText.lastIndexOf('}')
-    if (firstBrace !== -1 && lastBrace !== -1) {
-      cleanText = cleanText.substring(firstBrace, lastBrace + 1)
-    }
-
-    // Sprawdź czy to poprawny JSON
-    try {
-      JSON.parse(cleanText)
-    } catch (e) {
-      console.error('Invalid JSON from AI:', cleanText)
-      return json({ error: 'Invalid JSON generated' }, { status: 500 })
-    }
-
-    return json({ worldData: JSON.parse(cleanText) })
+    // The client expects the response to be wrapped in a `candidates` array.
+    return json({
+        candidates: [
+            {
+                content: {
+                    parts: [{ text: responseText }]
+                }
+            }
+        ]
+    })
 
   } catch (error: unknown) {
-    console.error('Error in world enhancement API:', error)
+    console.error('Error in chat API:', error)
 
     if (error && typeof error === 'object' && 'status' in error) {
       const status = (error as { status: number }).status
