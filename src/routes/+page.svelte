@@ -82,7 +82,7 @@
 </script>
 
 <svelte:head>
-	<title>Chad RPG</title>
+	<title>Alyssium</title>
 </svelte:head>
 
 <main class="game-layout">

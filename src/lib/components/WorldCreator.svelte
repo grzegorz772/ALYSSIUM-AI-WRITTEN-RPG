@@ -49,30 +49,18 @@
 	}
 	
 	async function generateStaticWorld() {
-		if (!userPrompt.trim()) {
-			error = 'Enter world description'
-			return
-		}
-		
 		isGenerating = true
 		error = ''
 		
+		// Predefined world prompt invented by AI
+		const predefinedPrompt = "A world of 'Aetheria', where gravity is subjective and cities are built on the backs of colossal, sky-faring tortoises. The atmosphere is filled with 'Mana-Dust' that glows at night, and the primary source of conflict is the control over the 'Singing Crystals' that keep the tortoises afloat."
+		
 		try {
-			const response = await fetch('/api/generate-world', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ 
-					prompt: userPrompt,
-					type: 'static_world_generation'
-				})
-			})
-			
-			if (!response.ok) throw new Error('Generation failed')
-			
-			const data = await response.json()
-			generatedWorldPrompt = data.worldPrompt
+			// Simulate a brief delay for "loading" effect
+			await new Promise(resolve => setTimeout(resolve, 800))
+			generatedWorldPrompt = predefinedPrompt
 		} catch (err) {
-			error = 'Failed to generate world. Try again.'
+			error = 'Failed to load static world.'
 		} finally {
 			isGenerating = false
 		}

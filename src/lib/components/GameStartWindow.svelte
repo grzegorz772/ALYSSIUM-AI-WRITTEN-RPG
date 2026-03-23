@@ -10,6 +10,7 @@
 
 	import medievalTavernStarter from '$lib/gamedata/gamestarters/medievalTavernStarter.json'
 	import WorldCreator from './WorldCreator.svelte'
+	import { LanguageSettingsData } from '$lib/config/constants'
 	
 	function getRandomValueFromArray(array: any) {
 		const randomIndex = Math.floor(Math.random() * array?.length)
@@ -26,57 +27,93 @@
 	let gameStarterPrompt: string = ''
 	let gameModeSelected: boolean = false
 	let worldCreationMode: boolean = false
+	let configurationMode: boolean = false
 	let customWorldPrompt: string = ''
+
+	// Unified transition function to prevent layout jumps
+	async function transitionTo(target: 'menu' | 'world' | 'config' | 'character') {
+		const el = document.getElementById('game-start-window');
+		if (!el) return;
+
+		const oldHeight = `${el.clientHeight}px`;
+		el.style.height = oldHeight;
+
+		// Switch states
+		if (target === 'menu') {
+			worldCreationMode = false;
+			configurationMode = false;
+			gameModeSelected = false;
+		} else if (target === 'world') {
+			worldCreationMode = true;
+			configurationMode = false;
+		} else if (target === 'config') {
+			configurationMode = true;
+			worldCreationMode = false;
+		} else if (target === 'character') {
+			gameModeSelected = true;
+			worldCreationMode = false;
+			configurationMode = false;
+		}
+
+		await tick();
+
+		// Measure new height
+		el.style.height = 'auto';
+		const newHeight = `${el.clientHeight}px`;
+		el.style.height = oldHeight;
+
+		// Animate
+		const animation = el.animate([
+			{ height: oldHeight },
+			{ height: newHeight }
+		], {
+			duration: 400,
+			easing: 'cubic-bezier(0.4, 0, 0.2, 1)'
+		});
+
+		animation.onfinish = () => {
+			el.style.height = 'auto';
+		};
+	}
+
+	// Temp settings for configuration
+	let tempSettings = {
+		nativeLanguage: LanguageSettingsData.nativeLanguage,
+		foreignLanguage: LanguageSettingsData.foreignLanguage,
+		languageLevel: LanguageSettingsData.languageLevel
+	};
+
+	function saveConfiguration() {
+		LanguageSettingsData.nativeLanguage = tempSettings.nativeLanguage;
+		LanguageSettingsData.foreignLanguage = tempSettings.foreignLanguage;
+		LanguageSettingsData.languageLevel = tempSettings.languageLevel;
+		transitionTo('menu');
+	}
 
 	function handleWorldCreated(event: CustomEvent) {
 		customWorldPrompt = event.detail.worldPrompt
-		worldCreationMode = false
-		gameModeSelected = true
+		transitionTo('character');
 	}
 
 	function skipWorldCreation() {
-		worldCreationMode = false
-		gameModeSelected = true
+		transitionTo('character');
 	}
 
 	async function handleGameMode(answer: any) {
-		const el = document.getElementById('game-start-window')
-		let oldHeight = 'auto'
-
-		if (el) {
-			oldHeight = `${el.clientHeight}px`
-			el.style.height = oldHeight
-		}
-
-		worldCreationMode = true
 		gameStarterPrompt = answer
+		transitionTo('world');
+	}
 
-		await tick()
-
-		if (el) {
-			const oldContent = el.querySelector('.start-content') as HTMLElement | null
-			let oldDisplay = ''
-			if (oldContent) {
-				oldDisplay = oldContent.style.display
-				oldContent.style.display = 'none'
-			}
-
-			el.style.height = 'auto'
-			const newHeight = `${el.clientHeight}px`
-
-			if (oldContent) {
-				oldContent.style.display = oldDisplay
-			}
-
-			el.style.height = oldHeight
-			const animation = el.animate([{ height: oldHeight }, { height: newHeight }], {
-				duration: 500,
-				easing: 'cubic-bezier(0.4, 0, 0.2, 1)'
-			})
-
-			animation.onfinish = () => {
-				el.style.height = 'auto'
-			}
+	async function toggleConfiguration() {
+		if (!configurationMode) {
+			tempSettings = {
+				nativeLanguage: LanguageSettingsData.nativeLanguage,
+				foreignLanguage: LanguageSettingsData.foreignLanguage,
+				languageLevel: LanguageSettingsData.languageLevel
+			};
+			transitionTo('config');
+		} else {
+			transitionTo('menu');
 		}
 	}
 </script>
@@ -84,11 +121,68 @@
 <div class="start-overlay" transition:fade={{ duration: 800, easing: cubicOut }}>
 	<div class="start-window glass-container" id="game-start-window" in:fly={{ y: 40, duration: 800, delay: 200, easing: elasticOut }}>
 			{#if worldCreationMode}
-				<div class="world-creator-wrapper" transition:fade={{ duration: 500, easing: cubicOut }}>
+				<div class="world-creator-wrapper" in:fade={{ duration: 300, delay: 200 }} out:fade={{ duration: 200 }}>
 					<WorldCreator on:worldCreated={handleWorldCreated} />
 				</div>
+			{:else if configurationMode}
+				<div class="config-content" in:fade={{ duration: 300, delay: 200 }} out:fade={{ duration: 200 }}>
+					<header class="minimal-header">
+						<div class="logo-area">
+							<span class="icon-glow">⚙</span>
+							<h2 class="title">SYSTEM CONFIG</h2>
+						</div>
+						<p class="subtitle">Neural translation & Language parameters</p>
+					</header>
+
+					<div class="config-grid">
+						<div class="config-item">
+							<label for="native-lang">NATIVE LANGUAGE</label>
+							<div class="select-wrapper">
+								<select id="native-lang" bind:value={tempSettings.nativeLanguage} class="glass-select">
+									{#each LanguageSettingsData.options.languages as lang}
+										<option value={lang}>{lang}</option>
+									{/each}
+								</select>
+							</div>
+						</div>
+
+						<div class="config-item">
+							<label for="foreign-lang">TARGET LANGUAGE</label>
+							<div class="select-wrapper">
+								<select id="foreign-lang" bind:value={tempSettings.foreignLanguage} class="glass-select">
+									{#each LanguageSettingsData.options.languages as lang}
+										<option value={lang}>{lang}</option>
+									{/each}
+								</select>
+							</div>
+						</div>
+
+						<div class="config-item">
+							<label for="lang-level">PROFICIENCY LEVEL (CEFR)</label>
+							<div class="select-wrapper">
+								<select id="lang-level" bind:value={tempSettings.languageLevel} class="glass-select">
+									{#each LanguageSettingsData.options.levels as level}
+										<option value={level}>{level}</option>
+									{/each}
+								</select>
+							</div>
+						</div>
+					</div>
+
+					<div class="config-actions">
+						<button class="glass-btn secondary" on:click={() => transitionTo('menu')}>
+							<div class="btn-inner">CANCEL</div>
+						</button>
+						<button class="glass-btn primary" on:click={saveConfiguration}>
+							<div class="btn-inner">
+								<span class="icon">💾</span>
+								<span>APPLY CHANGES</span>
+							</div>
+						</button>
+					</div>
+				</div>
 			{:else if gameModeSelected}
-				<div class="character-select" transition:fade={{ duration: 500, easing: cubicOut }}>
+				<div class="character-select" in:fade={{ duration: 300, delay: 200 }} out:fade={{ duration: 200 }}>
 					<CharacterClasses
 						on:emittedAnswer={() => {
 							emitAnswer(customWorldPrompt || gameStarterPrompt)
@@ -96,7 +190,7 @@
 					/>
 				</div>
 			{:else}
-			<div class="start-content" transition:fade={{ duration: 600, easing: cubicOut }}>
+			<div class="start-content" in:fade={{ duration: 300, delay: 200 }} out:fade={{ duration: 200 }}>
 				<!-- Header Section -->
 				<header class="minimal-header">
 					<div class="logo-area">
@@ -128,12 +222,12 @@
 						</button>
 
 						<div class="secondary-actions">
-							<button class="menu-card secondary disabled">
+							<button class="menu-card secondary" on:click={toggleConfiguration}>
 								<div class="card-content">
 									<h3 class="card-title">CONFIGURATION</h3>
-									<p class="card-desc">System parameters & hardware sync.</p>
+									<p class="card-desc">Language sync: {LanguageSettingsData.foreignLanguage} ({LanguageSettingsData.languageLevel})</p>
 								</div>
-								<span class="tag">SOON</span>
+								<span class="status-dot"></span>
 							</button>
 
 							<button class="menu-card secondary disabled">
@@ -198,9 +292,10 @@
 			0 25px 50px -12px rgba(0, 0, 0, 0.5),
 			inset 0 1px 1px rgba(255, 255, 255, 0.05);
 		overflow: hidden;
+		transition: border-color 0.3s;
 	}
 
-	.start-content {
+	.start-content, .config-content {
 		padding: 3rem;
 		color: var(--text-main);
 		display: flex;
@@ -221,6 +316,12 @@
 		display: flex;
 		align-items: center;
 		gap: 1rem;
+	}
+
+	.icon-glow {
+		font-size: 1.5rem;
+		color: var(--accent-primary);
+		text-shadow: 0 0 15px var(--accent-primary);
 	}
 
 	.title {
@@ -246,6 +347,95 @@
 		font-size: 1rem;
 		color: var(--text-dim);
 		margin: 0;
+	}
+
+	/* Config Section Styles */
+	.config-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+		gap: 2rem;
+	}
+
+	.config-item {
+		display: flex;
+		flex-direction: column;
+		gap: 0.8rem;
+	}
+
+	.config-item label {
+		font-size: 0.7rem;
+		font-weight: 800;
+		color: var(--accent-primary);
+		letter-spacing: 0.1em;
+		opacity: 0.8;
+	}
+
+	.select-wrapper {
+		position: relative;
+		width: 100%;
+	}
+
+	.glass-select {
+		width: 100%;
+		background: rgba(255, 255, 255, 0.03);
+		border: 1px solid var(--glass-border);
+		border-radius: 16px;
+		padding: 1rem;
+		color: white;
+		font-family: inherit;
+		font-size: 1rem;
+		appearance: none;
+		cursor: pointer;
+		transition: all 0.3s;
+	}
+
+	.glass-select:focus {
+		outline: none;
+		border-color: var(--accent-primary);
+		background: rgba(255, 255, 255, 0.08);
+		box-shadow: 0 0 20px rgba(0, 242, 255, 0.1);
+	}
+
+	.glass-select option {
+		background: #1a1a1a;
+		color: white;
+	}
+
+	.config-actions {
+		display: flex;
+		justify-content: flex-end;
+		gap: 1.5rem;
+		margin-top: 1rem;
+	}
+
+	.glass-btn {
+		background: var(--glass-bg);
+		border: 1px solid var(--glass-border);
+		border-radius: 16px;
+		padding: 1rem 2rem;
+		cursor: pointer;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		color: white;
+		font-weight: 800;
+		letter-spacing: 0.05em;
+	}
+
+	.glass-btn:hover {
+		transform: translateY(-2px);
+		background: rgba(255, 255, 255, 0.08);
+		border-color: rgba(255, 255, 255, 0.3);
+	}
+
+	.glass-btn.primary {
+		background: linear-gradient(135deg, rgba(0, 242, 255, 0.1), rgba(112, 0, 255, 0.1));
+		border-color: var(--accent-primary);
+		color: var(--accent-primary);
+	}
+
+	.btn-inner {
+		display: flex;
+		align-items: center;
+		gap: 0.8rem;
 	}
 
 	/* Main Layout */
@@ -322,6 +512,17 @@
 		line-height: 1.5;
 	}
 
+	.status-dot {
+		position: absolute;
+		top: 1rem;
+		right: 1rem;
+		width: 8px;
+		height: 8px;
+		background: var(--accent-primary);
+		border-radius: 50%;
+		box-shadow: 0 0 10px var(--accent-primary);
+	}
+
 	.card-stats {
 		display: flex;
 		gap: 1rem;
@@ -370,94 +571,10 @@
 		cursor: not-allowed;
 	}
 
-	.tag {
-		position: absolute;
-		top: 1rem;
-		right: 1rem;
-		font-size: 0.6rem;
-		background: rgba(255, 255, 255, 0.1);
-		padding: 0.2rem 0.5rem;
-		border-radius: 4px;
-	}
-
-	/* System Monitor */
-	.system-monitor {
-		display: flex;
-		flex-direction: column;
-		gap: 1.5rem;
-	}
-
-	.monitor-card {
-		background: var(--glass-bg);
-		border: 1px solid var(--glass-border);
-		border-radius: 20px;
-		padding: 1.5rem;
-	}
-
-	.monitor-title {
-		font-size: 0.75rem;
-		font-weight: 700;
-		color: var(--text-dim);
-		margin: 0 0 1rem 0;
-		letter-spacing: 0.05em;
-	}
-
-	.status-grid {
-		display: flex;
-		flex-direction: column;
-		gap: 0.8rem;
-		margin-bottom: 1.5rem;
-	}
-
-	.status-row {
-		display: flex;
-		justify-content: space-between;
-		font-size: 0.85rem;
-	}
-
-	.label { color: var(--text-dim); }
-	.value { font-family: monospace; }
-	.value.online { color: var(--accent-primary); }
-
-	.integrity-meter {
-		margin-top: 1.5rem;
-	}
-
-	.meter-header {
-		display: flex;
-		justify-content: space-between;
-		font-size: 0.7rem;
-		margin-bottom: 0.5rem;
-	}
-
-	.meter-bar {
-		height: 4px;
-		background: rgba(255, 255, 255, 0.05);
-		border-radius: 2px;
-		overflow: hidden;
-	}
-
-	.meter-fill {
-		height: 100%;
-		background: var(--accent-primary);
-		box-shadow: 0 0 10px var(--accent-primary);
-	}
-
-	.terminal-footer {
-		margin-top: auto;
-		background: rgba(0, 0, 0, 0.2);
-		padding: 1rem;
-		border-radius: 12px;
-		font-size: 0.8rem;
-		font-family: monospace;
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		color: var(--accent-secondary);
-	}
-
-	.cursor { animation: blink 1s infinite; }
-	@keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+	/* Scrollbar */
+	.start-content::-webkit-scrollbar, .config-content::-webkit-scrollbar { width: 4px; }
+	.start-content::-webkit-scrollbar-track, .config-content::-webkit-scrollbar-track { background: transparent; }
+	.start-content::-webkit-scrollbar-thumb, .config-content::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 2px; }
 
 	/* Minimal Footer */
 	.minimal-footer {
@@ -469,49 +586,27 @@
 		border-top: 1px solid var(--glass-border);
 	}
 
-	/* Scrollbar */
-	.start-content::-webkit-scrollbar { width: 4px; }
-	.start-content::-webkit-scrollbar-track { background: transparent; }
-	.start-content::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 2px; }
-
 	/* World Creator Wrapper */
 	.world-creator-wrapper {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		gap: 1.5rem;
+		padding: 2rem;
 	}
 
-	.skip-btn {
-		background: transparent;
-		border: 1px solid var(--glass-border);
-		color: var(--text-dim);
-		padding: 0.8rem 1.5rem;
-		border-radius: 30px;
-		cursor: pointer;
-		font-size: 0.8rem;
-		font-weight: 600;
-		transition: all 0.3s;
-	}
-
-	.skip-btn:hover {
-		background: rgba(255, 255, 255, 0.05);
-		color: white;
-		border-color: white;
-	}
 	#game-start-window {
-		padding-bottom: 2rem;
+		transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 	}
+
 	/* Responsive */
 	@media (max-width: 900px) {
-		.main-layout { grid-template-columns: 1fr; }
-		.system-monitor { display: none; }
-		.start-content { padding: 1.5rem; }
+		.start-content, .config-content { padding: 1.5rem; }
 		.title { font-size: 2rem; }
+		.config-grid { grid-template-columns: 1fr; }
 	}
 
 	@media (max-width: 600px) {
 		.secondary-actions { grid-template-columns: 1fr; }
-		.menu-card { padding: 1.2rem; }
 	}
 </style>

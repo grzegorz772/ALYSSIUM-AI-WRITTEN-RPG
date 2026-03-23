@@ -166,6 +166,7 @@ export function getMapGridFromGame() {
 	let quotaExceeded: boolean = false
 	let highDemand: boolean = false
 	let requestTimeout: boolean = false
+	let worldPrompt: string = ''
 
 	// Animation for loading dots
 	onMount(() => {
@@ -328,7 +329,11 @@ export function getMapGridFromGame() {
 	}
 
 	function getGamePrompt() {
-		return `This is a role-playing game where you'll be the 1st person character and storyteller. You'll describe the world from a 3rd person perspective but when it's time for a conversation, interact with the player from a 1st person npc perspective. All these 1st person and 3rd person content will be in gameData.story! Shape the storyline based on players choices.
+		const worldContext = worldPrompt 
+			? `The game world is described as follows: "${worldPrompt}". Use this context for all storytelling.`
+			: "This is a standard fantasy role-playing game world.";
+
+		return `This is a role-playing game where you'll be the 1st person character and storyteller. ${worldContext} You'll describe the world from a 3rd person perspective but when it's time for a conversation, interact with the player from a 1st person npc perspective. All these 1st person and 3rd person content will be in gameData.story! Shape the storyline based on players choices.
 
 All of your responses MUST include a valid json object, with this exact properties(keys):
 
@@ -539,6 +544,9 @@ Don't forget to include at least 3 unique choices for the user to choose.`
 		$game.gameData.event = { inCombat: false, shopMode: null, lootMode: false };
 		$selectedItem = {};
 		$character.gold = STARTING_VALUES.GOLD;
+		
+		// Save world prompt for future context
+		worldPrompt = answer;
 
 		const heroClass = $game.gameData.heroClass;
 		if (heroClass === 'mage') {

@@ -5,6 +5,21 @@
  * Centralizing these values makes the game easier to balance and maintain.
  */
 
+// Language and Learning Settings
+export const LanguageSettingsData = {
+	nativeLanguage: 'English',
+	foreignLanguage: 'Latin',
+	languageLevel: 'A1',
+	options: {
+		languages: [
+			'English', 'Spanish', 'French', 'Italian', 'Portuguese', 
+			'Romanian', 'Catalan', 'Occitan', 'Latin', 'Ancient Greek',
+			'German', 'Dutch', 'Swedish', 'Polish', 'Czech'
+		],
+		levels: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
+	}
+};
+
 // Combat tier thresholds for damage calculation
 export const COMBAT_TIERS = {
 	POOR: { min: 1, max: 20 },
