@@ -82,20 +82,10 @@
 </script>
 
 <div class="start-overlay" transition:fade={{ duration: 800, easing: cubicOut }}>
-	<!-- Animated Background Blobs for Liquid Effect -->
-	<div class="bg-blobs">
-		<div class="blob blob-1"></div>
-		<div class="blob blob-2"></div>
-		<div class="blob blob-3"></div>
-	</div>
-
 	<div class="start-window glass-container" id="game-start-window" in:fly={{ y: 40, duration: 800, delay: 200, easing: elasticOut }}>
 			{#if worldCreationMode}
 				<div class="world-creator-wrapper" transition:fade={{ duration: 500, easing: cubicOut }}>
 					<WorldCreator on:worldCreated={handleWorldCreated} />
-					<button class="skip-btn" on:click={skipWorldCreation}>
-						<span class="btn-text">SKIP TO STANDARD WORLD</span>
-					</button>
 				</div>
 			{:else if gameModeSelected}
 				<div class="character-select" transition:fade={{ duration: 500, easing: cubicOut }}>
@@ -154,42 +144,6 @@
 							</button>
 						</div>
 					</nav>
-
-					<aside class="system-monitor">
-						<div class="monitor-card">
-							<h4 class="monitor-title">SYSTEM STATUS</h4>
-							<div class="status-grid">
-								<div class="status-row">
-									<span class="label">IDENTITY</span>
-									<span class="value">Player_2v77k</span>
-								</div>
-								<div class="status-row">
-									<span class="label">CONNECT</span>
-									<span class="value online">ENCRYPTED</span>
-								</div>
-								<div class="status-row">
-									<span class="label">LATENCY</span>
-									<span class="value">42ms</span>
-								</div>
-							</div>
-							
-							<div class="integrity-meter">
-								<div class="meter-header">
-									<span>INTEGRITY</span>
-									<span>97.3%</span>
-								</div>
-								<div class="meter-bar">
-									<div class="meter-fill" style="width: 97.3%"></div>
-								</div>
-							</div>
-						</div>
-
-						<div class="terminal-footer">
-							<span class="prompt">></span>
-							<span class="text">Illusion is everywhere</span>
-							<span class="cursor">_</span>
-						</div>
-					</aside>
 				</div>
 
 				<!-- Simple Footer -->
@@ -224,78 +178,25 @@
 		align-items: center;
 		justify-content: center;
 		padding: 2rem;
-		background: #050508;
+		background: rgba(0, 0, 0, 0.4);
+		backdrop-filter: blur(12px);
+		-webkit-backdrop-filter: blur(12px);
 		overflow: hidden;
 		font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-	}
-
-	/* Swirling Liquid Gradient Background */
-	.bg-blobs {
-		position: absolute;
-		inset: 0;
-		filter: blur(80px);
-		z-index: 0;
-		opacity: 0.6;
-	}
-
-	.blob {
-		position: absolute;
-		border-radius: 50%;
-		animation: swirl 10s infinite linear;
-		mix-blend-mode: screen;
-	}
-
-	.blob-1 {
-		width: min(600px, 90vw);
-		height: min(600px, 90vw);
-		top: -10%;
-		left: -10%;
-		background: var(--accent-secondary);
-		animation-duration: 8s;
-	}
-
-	.blob-2 {
-		width: min(500px, 80vw);
-		height: min(500px, 80vw);
-		bottom: -10%;
-		right: -10%;
-		background: var(--accent-primary);
-		animation-duration: 12s;
-		animation-delay: -2s;
-		animation-direction: reverse;
-	}
-
-	.blob-3 {
-		width: min(400px, 70vw);
-		height: min(400px, 70vw);
-		top: 40%;
-		left: 50%;
-		background: #ff00c8;
-		animation-duration: 10s;
-		animation-delay: -5s;
-	}
-
-	@keyframes swirl {
-		0% { transform: translate(0, 0) rotate(0deg) scale(1); }
-		33% { transform: translate(10%, 15%) rotate(120deg) scale(1.1); }
-		66% { transform: translate(-15%, 5%) rotate(240deg) scale(0.9); }
-		100% { transform: translate(0, 0) rotate(360deg) scale(1); }
 	}
 
 	/* Glass Container */
 	.glass-container {
 		position: relative;
 		z-index: 10;
-		width: min(95%, 1100px);
+		width: min(93%, 1100px);
 		max-height: 85vh;
-		background: rgba(10, 10, 15, 0.4);
-		backdrop-filter: blur(40px) saturate(150%);
-		-webkit-backdrop-filter: blur(40px) saturate(150%);
+		background: rgba(10, 10, 15, 0.6);
 		border: 1px solid var(--glass-border);
 		border-radius: 32px;
 		box-shadow: 
 			0 25px 50px -12px rgba(0, 0, 0, 0.5),
-			inset 0 1px 1px rgba(255, 255, 255, 0.1);
+			inset 0 1px 1px rgba(255, 255, 255, 0.05);
 		overflow: hidden;
 	}
 
@@ -350,7 +251,7 @@
 	/* Main Layout */
 	.main-layout {
 		display: grid;
-		grid-template-columns: 1fr 300px;
+		grid-template-columns: 1fr;
 		gap: 2rem;
 	}
 
@@ -572,7 +473,6 @@
 
 	/* World Creator Wrapper */
 	.world-creator-wrapper {
-		padding: 2rem;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -596,7 +496,9 @@
 		color: white;
 		border-color: white;
 	}
-
+	#game-start-window {
+		padding-bottom: 2rem;
+	}
 	/* Responsive */
 	@media (max-width: 900px) {
 		.main-layout { grid-template-columns: 1fr; }

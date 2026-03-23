@@ -22,8 +22,8 @@
 	let availablePoints = 10
 	
 	const avatars = [
-		{ id: 'warrior', name: 'WARRIOR', src: 'images/characters/avatar1.jpg' },
-		{ id: 'mage', name: 'MAGE', src: 'images/characters/avatar2.jpg' }
+		{ id: 'warrior', name: 'WARRIOR', src: 'https://picsum.photos/400/400?random=1' },
+		{ id: 'mage', name: 'MAGE', src: 'https://picsum.photos/400/400?random=2' }
 	]
 
 	function adjustStat(statKey: string, change: number) {
@@ -81,13 +81,6 @@
 </script>
 
 <div class="character-creation" transition:fade={{ duration: 600 }}>
-	<!-- Breathing Liquid Gradient Background -->
-	<div class="liquid-bg">
-		<div class="blob blob-1"></div>
-		<div class="blob blob-2"></div>
-		<div class="blob blob-3"></div>
-	</div>
-
 	<!-- Debug Trigger -->
 	<button class="debug-trigger" on:click={fillWithTestData}>
 		<span class="icon">⚡</span>
@@ -95,14 +88,6 @@
 	</button>
 
 	<div class="glass-content" in:fly={{ y: 30, duration: 800, easing: cubicOut }}>
-		<header class="creation-header">
-			<div class="header-main">
-				<h2 class="title">Create your character</h2>
-				<div class="badge">AVATAR</div>
-			</div>
-			<p class="subtitle"></p>
-		</header>
-
 		<div class="creation-layout">
 			<!-- Identity Section -->
 			<section class="identity-section">
@@ -130,7 +115,6 @@
 									<img src={avatar.src} alt={avatar.id} />
 									<div class="selection-overlay"></div>
 								</div>
-								<span class="avatar-label">{avatar.name}</span>
 							</button>
 						{/each}
 					</div>
@@ -170,9 +154,7 @@
 								</div>
 							</div>
 							<div class="stat-progress">
-								<div class="progress-track">
-									<div class="progress-fill" style="width: {stat.value * 10}%"></div>
-								</div>
+								<div class="progress-fill" style="width: {stat.value * 10}%"></div>
 							</div>
 						</div>
 					{/each}
@@ -204,6 +186,7 @@
 	}
 
 	.character-creation {
+		padding: 0;
 		position: relative;
 		width: 100%;
 		min-height: 100%;
@@ -216,60 +199,6 @@
 		overflow-x: hidden;
 		overflow-y: auto;
 		box-sizing: border-box;
-	}
-
-	/* Swirling Liquid Gradient Background */
-	.liquid-bg {
-		position: absolute;
-		inset: 0;
-		z-index: 0;
-		filter: blur(80px);
-		opacity: 0.6;
-		pointer-events: none;
-	}
-
-	.blob {
-		position: absolute;
-		border-radius: 50%;
-		animation: swirl 10s infinite linear;
-		mix-blend-mode: screen;
-	}
-
-	.blob-1 { 
-		width: min(500px, 80vw); 
-		height: min(500px, 80vw); 
-		background: var(--accent-secondary); 
-		top: -15%; 
-		left: -10%; 
-		animation-duration: 8s;
-	}
-	
-	.blob-2 { 
-		width: min(450px, 70vw); 
-		height: min(450px, 70vw); 
-		background: var(--accent-primary); 
-		bottom: -15%; 
-		right: -10%; 
-		animation-duration: 12s;
-		animation-delay: -2s; 
-		animation-direction: reverse;
-	}
-	
-	.blob-3 { 
-		width: min(400px, 60vw); 
-		height: min(400px, 60vw); 
-		background: #ff00c8; 
-		top: 30%; 
-		left: 40%; 
-		animation-duration: 10s;
-		animation-delay: -5s; 
-	}
-
-	@keyframes swirl {
-		0% { transform: translate(0, 0) rotate(0deg) scale(1); }
-		33% { transform: translate(15%, 10%) rotate(120deg) scale(1.2); }
-		66% { transform: translate(-10%, 20%) rotate(240deg) scale(0.9); }
-		100% { transform: translate(0, 0) rotate(360deg) scale(1); }
 	}
 
 	/* Debug Tool */
@@ -303,12 +232,9 @@
 		z-index: 10;
 		width: 100%;
 		max-width: 1000px;
-		background: rgba(10, 10, 15, 0.45);
-		backdrop-filter: blur(40px);
-		-webkit-backdrop-filter: blur(40px);
-		border: 1px solid var(--glass-border);
-		border-radius: 32px;
-		padding: 2.5rem;
+		background: none;
+		border: none;
+		padding: 1rem;
 		box-sizing: border-box;
 		margin: 1rem 0;
 	}
@@ -401,6 +327,7 @@
 	}
 
 	.avatar-card {
+		height: 8rem;
 		background: rgba(255, 255, 255, 0.03);
 		border: 1px solid var(--glass-border);
 		border-radius: 20px;
@@ -630,7 +557,7 @@
 	@media (max-width: 850px) {
 		.creation-layout { 
 			grid-template-columns: 1fr; 
-			gap: 2rem; 
+			gap: 0; 
 		}
 		
 		.glass-content { 

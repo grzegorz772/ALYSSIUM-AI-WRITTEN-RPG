@@ -763,6 +763,9 @@ Don't forget to include at least 3 unique choices for the user to choose.`
 	}
 
 	.story-section {
+		margin-right: auto;
+		margin-left: auto;
+		max-width: 93%;
 		min-height: 200px;
 		max-height: 55vh;
 	}

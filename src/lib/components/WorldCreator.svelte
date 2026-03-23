@@ -93,20 +93,7 @@
 </script>
 
 <div class="world-creator" transition:fade={{ duration: 600 }}>
-	<!-- Breathing Liquid Gradient Background -->
-	<div class="liquid-bg">
-		<div class="blob blob-primary"></div>
-		<div class="blob blob-secondary"></div>
-	</div>
-
 	<div class="glass-content" in:fly={{ y: 30, duration: 800, easing: cubicOut }}>
-		<header class="creator-header">
-			<div class="header-main">
-				<h2 class="title">WORLD CREATOR</h2>
-			</div>
-			<p class="subtitle">Define your reality.</p>
-		</header>
-
 		<div class="layout-main">
 			{#if !generatedWorldPrompt}
 				<div class="input-area" in:fade={{ duration: 400 }}>
@@ -237,61 +224,15 @@
 		border-radius: 24px;
 	}
 
-	/* Swirling Liquid Gradient Background */
-	.liquid-bg {
-		position: absolute;
-		inset: 0;
-		z-index: 0;
-		filter: blur(80px);
-		opacity: 0.6;
-		pointer-events: none;
-	}
-
-	.blob {
-		position: absolute;
-		border-radius: 50%;
-		animation: swirl 12s infinite linear;
-		mix-blend-mode: screen;
-	}
-
-	.blob-primary {
-		width: min(450px, 70vw);
-		height: min(450px, 70vw);
-		background: var(--accent-primary);
-		top: -10%;
-		left: -10%;
-		animation-duration: 9s;
-	}
-
-	.blob-secondary {
-		width: min(400px, 60vw);
-		height: min(400px, 60vw);
-		background: var(--accent-secondary);
-		bottom: -10%;
-		right: -10%;
-		animation-duration: 14s;
-		animation-delay: -3s;
-		animation-direction: reverse;
-	}
-
-	@keyframes swirl {
-		0% { transform: translate(0, 0) rotate(0deg) scale(1); }
-		33% { transform: translate(10%, 15%) rotate(120deg) scale(1.1); }
-		66% { transform: translate(-15%, 5%) rotate(240deg) scale(0.9); }
-		100% { transform: translate(0, 0) rotate(360deg) scale(1); }
-	}
-
 	/* Content Container */
 	.glass-content {
 		position: relative;
 		z-index: 10;
 		width: 100%;
 		max-width: 800px;
-		background: rgba(10, 10, 15, 0.3);
-		backdrop-filter: blur(20px);
-		border: 1px solid var(--glass-border);
-		border-radius: 32px;
-		padding: 2.5rem;
+		background: none;
+		border: none;
+		padding: 1rem;
 		box-sizing: border-box;
 	}
 
