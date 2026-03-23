@@ -48,8 +48,6 @@
 		{:else if $game.gameData.event}
 			<PickChoice on:emittedAnswer={handleEmittedAnswer} />
 		{/if}
-
-		<GoldTime on:emittedAnswer={handleEmittedAnswer} />
 	</div>
 {/if}
 

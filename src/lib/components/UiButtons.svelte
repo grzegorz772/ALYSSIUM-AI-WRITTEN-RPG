@@ -55,19 +55,6 @@
 			<Maintenance />
 		</div>
 	{/if}
-	<!-- audio play button -->
-	{#if $misc.started}
-		<button class="song-icon" transition:fade={{ duration: 500 }} on:click={() => startSong()}>
-			<img src="images/music.svg" alt="music button" />
-		</button>
-		<button
-			transition:fade={{ duration: 500 }}
-			class="fullscreen-icon"
-			on:click={() => toggleFullScreen()}
-		>
-			<img src="images/fullscreen.svg" alt="fullscreen button" />
-		</button>
-	{/if}
 	<!--  map and places  -->
 	<div class="map-and-places">
 		{#if $misc.started && !$misc.death}
@@ -132,14 +119,28 @@
 	</div>
 
 	<div class="bottom-right-buttons">
+		<!-- audio play button -->
+		{#if $misc.started}
+			<button class="util-btn song-icon" transition:fade={{ duration: 500 }} on:click={() => startSong()}>
+				<img src="images/music.svg" alt="music button" />
+			</button>
+			<button
+				transition:fade={{ duration: 500 }}
+				class="util-btn fullscreen-icon"
+				on:click={() => toggleFullScreen()}
+			>
+				<img src="images/fullscreen.svg" alt="fullscreen button" />
+			</button>
+		{/if}
+
 		<!--  bug window button  -->
-		<button class="bug-button" on:click={() => ($misc.bugWindow = !$misc.bugWindow)}>
+		<button class="util-btn bug-button" on:click={() => ($misc.bugWindow = !$misc.bugWindow)}>
 			<img src="images/bug.svg" alt="info button" />
 		</button>
 
 		<!--  game info button  -->
 		<button
-			class="game-info-button"
+			class="util-btn game-info-button"
 			on:click={() => ($misc.showInfoWindow = !$misc.showInfoWindow)}
 		>
 			<img src="images/info.svg" alt="info button" />
@@ -148,462 +149,513 @@
 
 	<!-- game info window -->
 	{#if $misc.showInfoWindow}
-		<div>
-			<div class="info-window">
-				<button on:click={() => ($misc.showInfoWindow = !$misc.showInfoWindow)}>
-					<img src="/images/close-button.svg" alt="close info window" />
+		<div class="modal-overlay" transition:fade={{ duration: 300 }}>
+			<div class="glass-modal info-window">
+				<button class="close-btn" on:click={() => ($misc.showInfoWindow = !$misc.showInfoWindow)}>
+					<span class="icon">✕</span>
 				</button>
 
-				<div class="text-box">
-					<div>
-						<h3 class="rules">About the Game</h3>
-						<ul>
-							<li>
-								This is an interactive role playing game where you are the player and Artificial
-								Intelligence is the storyteller of the game.
-							</li>
-							<li>
-								You'll give your own choices to events throughout the game, and AI will shape the
-								story based on your choices (and combat success).
-							</li>
-							<li>
-								You can write your own answer too, if you got any "interactive chat points". You can
-								buy them from potion shops and some merchants.
-							</li>
-							<li>
-								To fill your hp and mana; you can rest at a Inn, have time in a Tavern, or wonder in
-								a Town.
-							</li>
-							<li>There are no cooldowns for items but there are for spells.</li>
-							<li>
-								In combat, weapon score will be calculated from between 1-20, while spells are 1-23.
-							</li>
-							<li>Game ends if your health points drops down to 0.</li>
-							<li>
-								There is no save game functionality for now, current version is just a tastement.
-							</li>
+				<header class="modal-header">
+					<h2 class="title">SYSTEM ARCHIVE</h2>
+					<p class="subtitle">ALYSSIUM Interface Documentation</p>
+				</header>
+
+				<div class="modal-grid">
+					<section class="info-section">
+						<h3 class="section-title"><span class="emoji">⚔️</span> CORE LOGIC</h3>
+						<ul class="info-list">
+							<li>Interactive RPG driven by advanced Neural Networks.</li>
+							<li>AI shapes the reality based on your tactical decisions.</li>
+							<li>Custom actions use Neural Energy to influence the narrative.</li>
+							<li>Survival depends on Health (HP) and Mana (MP) management.</li>
+							<li>Combat efficiency scales with weapon and spell complexity.</li>
 						</ul>
-					</div>
-					<div>
-						<h3 class="updates">Potantial Updates</h3>
-						<ul>
-							<li>
-								Game balance will be improved, level system will be added, classes will be added.
-							</li>
-							<li>Armors-pendants-amulets-elixirs to be added.</li>
-							<li>
-								Other worlds to be added rather than just medieval world. For example; cyberpunk,
-								magical world, post-apocalyptic, zombie survival etc.
-							</li>
-							<li>
-								Other starting conditions to be added rather than just starting as a new adventurer.
-							</li>
-							<li>
-								Background images will be more organized, and songs will change according to places.
-							</li>
+					</section>
+
+					<section class="info-section">
+						<h3 class="section-title"><span class="emoji">🔮</span> SYSTEM STATUS</h3>
+						<ul class="info-list">
+							<li>Alpha v0.2.1: Procedural World Generation enabled.</li>
+							<li>AI-enhanced regional descriptions and unique biomes.</li>
+							<li>Refined Liquid Glass UI with immersive blur effects.</li>
+							<li>Real-time inventory and spell cooldown systems.</li>
+							<li>Experimental: Dynamic AI-generated NPC interactions.</li>
 						</ul>
-					</div>
+					</section>
 				</div>
-				<span class="span1"
-					>©2023 Solemensis. All rights reserved. <span style="color:aqua">|</span>
-					ulassacli@outlook.com
-					<span style="color:aqua">|</span> github/Solemensis
-					<span style="color:aqua">|</span>
-					<span>Current chatbot: gemini-pro</span>
-				</span>
+
+				<footer class="modal-footer">
+					<div class="footer-line"></div>
+					<p class="copyright">© 2026 ALYSSIUM PROTOCOL | SECURE CONNECTION ESTABLISHED</p>
+				</footer>
 			</div>
 		</div>
 	{/if}
+
 	<!-- bug report window -->
 	{#if $misc.bugWindow}
-		<div class="bug-window">
-			<button class="close-bug-window" on:click={() => ($misc.bugWindow = !$misc.bugWindow)}>
-				<img src="/images/close-button.svg" alt="close bug window" />
-			</button>
-			<div class="bug-container">
-				<h2>You can encounter some bugs for now, for numerous reasons.</h2>
-				<p>
-					Mail me the bugs you've encountered please, or your suggestions. I want to make it stable
-					time to time.
-				</p>
-				<div class="mail-box">
-					<a target="_blank" href="mailto:ulassacli@outlook.com">Press to mail me</a>
-					<p>or do it by default: ulassacli@outlook.com</p>
+		<div class="modal-overlay" transition:fade={{ duration: 300 }}>
+			<div class="glass-modal bug-window">
+				<button class="close-btn" on:click={() => ($misc.bugWindow = !$misc.bugWindow)}>
+					<span class="icon">✕</span>
+				</button>
+				
+				<header class="modal-header">
+					<h2 class="title">BUG REPORT</h2>
+					<p class="subtitle">Interface Anomaly Detection</p>
+				</header>
+
+				<div class="bug-content">
+					<div class="warning-icon">⚠️</div>
+					<p class="bug-desc">
+						The ALYSSIUM interface is in active development. If you encounter any logic loops, 
+						visual glitches, or neural desyncs, please report them via our central repository.
+					</p>
+					<div class="protocol-status">
+						<span class="status-label">DIAGNOSTIC MODE:</span>
+						<span class="status-value">ACTIVE</span>
+					</div>
 				</div>
 			</div>
 		</div>
 	{/if}
-	<!-- bug report window -->
 </div>
 
 <style>
-	/* Modal close buttons */
-	.close-bug-window {
-		position: absolute;
-		right: var(--space-lg);
-		top: var(--space-md);
-		cursor: pointer;
-		opacity: 0.7;
-		transition: opacity var(--transition-fast);
-	}
-	.close-bug-window:hover {
-		opacity: 1;
-	}
-	.close-bug-window img {
-		width: 1.5rem;
+	:root {
+		--glass-bg: rgba(15, 18, 25, 0.8);
+		--glass-border: rgba(255, 255, 255, 0.1);
+		--accent-primary: #00f2ff;
+		--accent-secondary: #7000ff;
+		--text-main: #f0f0f0;
+		--text-dim: rgba(240, 240, 240, 0.5);
 	}
 
-	/* Bug report modal */
-	.bug-window {
+	/* Modal Overlays */
+	.modal-overlay {
 		position: fixed;
-		left: 50%;
-		top: 50%;
-		transform: translate(-50%, -50%);
-		width: min(90%, 500px);
-		max-height: 80vh;
-		background: var(--color-bg-dark);
-		backdrop-filter: blur(24px);
-		-webkit-backdrop-filter: blur(24px);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-xl);
-		z-index: 1001;
-		overflow: auto;
-		padding: var(--space-xl);
-	}
-
-	.bug-container {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		text-align: center;
-		gap: var(--space-md);
-	}
-
-	.bug-container h2 {
-		font-weight: 500;
-		font-size: 1.25rem;
-		color: var(--color-accent-gold);
-	}
-
-	.bug-container p {
-		font-size: 0.9rem;
-		color: var(--color-text-secondary);
-	}
-
-	.mail-box {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-sm);
-		margin-top: var(--space-md);
-	}
-
-	.mail-box a {
-		color: var(--color-accent-secondary);
-		text-decoration: none;
-		font-size: 1rem;
-		padding: var(--space-sm) var(--space-lg);
-		background: rgba(63, 207, 142, 0.1);
-		border-radius: var(--radius-md);
-		transition: background var(--transition-fast);
-	}
-	.mail-box a:hover {
-		background: rgba(63, 207, 142, 0.2);
-	}
-
-	.mail-box p {
-		user-select: text;
-		font-size: 0.8rem;
-		color: var(--color-text-muted);
-	}
-
-	/* Info window modal */
-	.info-window {
-		position: fixed;
-		left: 50%;
-		top: 50%;
-		transform: translate(-50%, -50%);
-		width: min(95%, 800px);
-		max-height: 85vh;
-		background: var(--color-bg-dark);
-		backdrop-filter: blur(24px);
-		-webkit-backdrop-filter: blur(24px);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-xl);
+		inset: 0;
+		background: rgba(0, 0, 0, 0.6);
+		backdrop-filter: blur(10px);
 		z-index: 1000;
-		overflow: auto;
-		padding: var(--space-xl);
-	}
-
-	.info-window > button {
-		position: absolute;
-		right: var(--space-lg);
-		top: var(--space-md);
-		cursor: pointer;
-		opacity: 0.7;
-		transition: opacity var(--transition-fast);
-	}
-	.info-window > button:hover {
-		opacity: 1;
-	}
-	.info-window > button img {
-		width: 1.5rem;
-	}
-
-	.span1 {
-		display: block;
-		text-align: center;
-		margin-top: var(--space-lg);
-		padding-top: var(--space-md);
-		border-top: 1px solid var(--color-border);
-		color: var(--color-text-muted);
-		font-size: 0.75rem;
-	}
-
-	.text-box {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-		gap: var(--space-xl);
-		margin-top: var(--space-lg);
-	}
-
-	.text-box h3 {
-		font-weight: 500;
-		font-size: 1.1rem;
-		margin-bottom: var(--space-md);
 		display: flex;
 		align-items: center;
-		gap: var(--space-sm);
+		justify-content: center;
+		padding: 2rem;
 	}
 
-	.rules {
-		color: var(--color-accent-gold);
-	}
-	.rules::before {
-		content: '⚔️';
+	.glass-modal {
+		background: var(--glass-bg);
+		backdrop-filter: blur(40px) saturate(150%);
+		-webkit-backdrop-filter: blur(40px) saturate(150%);
+		border: 1px solid var(--glass-border);
+		border-radius: 32px;
+		padding: 3rem;
+		width: 100%;
+		max-width: 800px;
+		max-height: 90vh;
+		overflow-y: auto;
+		position: relative;
+		box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+		scrollbar-width: thin;
+		scrollbar-color: var(--accent-primary) transparent;
 	}
 
-	.updates {
-		color: var(--color-accent-secondary);
-	}
-	.updates::before {
-		content: '🔮';
+	.glass-modal::-webkit-scrollbar { width: 4px; }
+	.glass-modal::-webkit-scrollbar-thumb { background: var(--accent-primary); border-radius: 10px; }
+
+	.bug-window {
+		max-width: 500px;
+		text-align: center;
 	}
 
-	.text-box ul {
+	/* Header */
+	.modal-header {
+		margin-bottom: 2.5rem;
+		padding-right: 3rem;
+	}
+
+	.title {
+		font-size: clamp(1.4rem, 5vw, 2.2rem);
+		font-weight: 800;
+		letter-spacing: -0.02em;
+		background: linear-gradient(to right, #fff, var(--text-dim));
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		margin: 0;
+	}
+
+	.subtitle {
+		font-size: clamp(0.7rem, 2vw, 0.9rem);
+		color: var(--accent-primary);
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		margin: 0.5rem 0 0 0;
+	}
+
+	/* Grid & Sections */
+	.modal-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 3rem;
+	}
+
+	.section-title {
+		font-size: 1rem;
+		font-weight: 800;
+		color: #fff;
+		margin-bottom: 1.2rem;
+		display: flex;
+		align-items: center;
+		gap: 0.8rem;
+	}
+
+	.info-list {
 		list-style: none;
 		padding: 0;
+		margin: 0;
 	}
 
-	.text-box li {
-		margin-bottom: var(--space-sm);
-		font-size: 0.85rem;
-		color: var(--color-text-secondary);
-		padding-left: var(--space-md);
+	.info-list li {
+		font-size: clamp(0.85rem, 2.5vw, 1rem);
+		color: var(--text-dim);
+		line-height: 1.6;
+		margin-bottom: 0.8rem;
+		padding-left: 1.2rem;
 		position: relative;
 	}
 
-	.text-box li::before {
-		content: '•';
+	.info-list li::before {
+		content: "";
 		position: absolute;
 		left: 0;
-		color: var(--color-accent-primary);
+		top: 0.7rem;
+		width: 4px;
+		height: 4px;
+		background: var(--accent-primary);
+		border-radius: 50%;
+		box-shadow: 0 0 8px var(--accent-primary);
 	}
 
-	/* Map and places - Top left UI */
-	.map-and-places {
-		position: fixed;
-		left: var(--space-md);
-		top: var(--space-md);
+	/* Bug Content */
+	.bug-content {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-sm);
-		z-index: 50;
+		align-items: center;
+		gap: 1.5rem;
+	}
+
+	.warning-icon {
+		font-size: clamp(2rem, 8vw, 3rem);
+		filter: drop-shadow(0 0 15px rgba(255, 200, 0, 0.3));
+	}
+
+	.bug-desc {
+		color: var(--text-dim);
+		line-height: 1.6;
+		font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+	}
+
+	.protocol-status {
+		background: rgba(0, 0, 0, 0.3);
+		padding: 0.8rem 1.5rem;
+		border-radius: 12px;
+		border: 1px solid var(--glass-border);
+		display: flex;
+		gap: 1rem;
+		font-size: 0.8rem;
+		font-weight: 800;
+	}
+
+	.status-label { color: var(--text-dim); }
+	.status-value { color: #00ffaa; text-shadow: 0 0 10px rgba(0, 255, 170, 0.4); }
+
+	/* Footer */
+	.modal-footer {
+		margin-top: 3rem;
+	}
+
+	.footer-line {
+		height: 1px;
+		background: linear-gradient(to right, transparent, var(--glass-border), transparent);
+		margin-bottom: 1.5rem;
+	}
+
+	.copyright {
+		font-size: clamp(0.6rem, 1.5vw, 0.75rem);
+		color: var(--text-dim);
+		text-align: center;
+		letter-spacing: 0.1em;
+		font-family: monospace;
+	}
+
+	/* Close Button */
+	.close-btn {
+		position: absolute;
+		top: 1.5rem;
+		right: 1.5rem;
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid var(--glass-border);
+		width: 44px;
+		height: 44px;
+		border-radius: 50%;
+		color: #fff;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.3s;
+		z-index: 10;
+	}
+
+	.close-btn:hover {
+		background: rgba(255, 255, 255, 0.1);
+		transform: rotate(90deg);
+		color: #ff3e3e;
+		border-color: #ff3e3e;
+	}
+
+	/* Top Buttons */
+	.song-icon, .fullscreen-icon {
+		position: fixed;
+		right: 15px;
+		width: 44px;
+		height: 44px;
+		background: var(--glass-bg);
+		backdrop-filter: blur(25px) saturate(180%);
+		-webkit-backdrop-filter: blur(25px) saturate(180%);
+		border: 1px solid var(--glass-border);
+		border-radius: 14px;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 100;
+		transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+	}
+
+	.song-icon:hover, .fullscreen-icon:hover {
+		background: rgba(255, 255, 255, 0.1);
+		border-color: var(--accent-primary);
+		transform: translateY(-2px);
+		box-shadow: 0 10px 20px rgba(0, 242, 255, 0.1);
+	}
+
+	.song-icon { top: 15px; }
+	.fullscreen-icon { top: 69px; }
+
+	.song-icon img, .fullscreen-icon img {
+		width: 22px;
+		height: 22px;
+		opacity: 0.9;
+	}
+
+	/* Map Controls */
+	.map-and-places {
+		position: fixed;
+		left: 15px;
+		top: 15px;
+		z-index: 150;
 	}
 
 	.map-and-places > button {
 		width: 44px;
 		height: 44px;
+		background: var(--glass-bg);
+		backdrop-filter: blur(25px) saturate(180%);
+		-webkit-backdrop-filter: blur(25px) saturate(180%);
+		border: 1px solid var(--glass-border);
+		border-radius: 14px;
+		cursor: pointer;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background: var(--color-bg-glass);
-		backdrop-filter: blur(16px);
-		-webkit-backdrop-filter: blur(16px);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
-		cursor: pointer;
-		transition: all var(--transition-fast);
+		transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 	}
 
 	.map-and-places > button:hover {
+		border-color: var(--accent-primary);
 		background: rgba(255, 255, 255, 0.1);
-		border-color: var(--color-border-hover);
+		transform: scale(1.05);
 	}
 
-	.map-and-places img {
-		width: 24px;
-		height: 24px;
-		opacity: 0.8;
-	}
-
-	.places-to-go {
+	/* Bottom Buttons */
+	.bottom-right-buttons {
+		position: fixed;
+		right: 15px;
+		bottom: 85px;
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-xs);
-		margin-top: var(--space-xs);
+		gap: 12px;
+		z-index: 100;
+	}
+
+	.bug-button, .game-info-button {
+		width: 44px;
+		height: 44px;
+		background: var(--glass-bg);
+		backdrop-filter: blur(25px) saturate(180%);
+		-webkit-backdrop-filter: blur(25px) saturate(180%);
+		border: 1px solid var(--glass-border);
+		border-radius: 14px;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+	}
+
+	.bug-button:hover, .game-info-button:hover {
+		background: rgba(255, 255, 255, 0.1);
+		transform: scale(1.1);
+		border-color: var(--accent-primary);
+		box-shadow: 0 10px 20px rgba(0, 242, 255, 0.1);
+	}
+
+	.bug-button img, .game-info-button img {
+		width: 22px;
+		height: 22px;
+		opacity: 0.9;
+	}
+
+	/* Places List */
+	.places-to-go {
+		position: absolute;
+		top: 55px;
+		left: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		background: rgba(15, 18, 25, 0.9);
+		backdrop-filter: blur(35px) saturate(200%);
+		-webkit-backdrop-filter: blur(35px) saturate(200%);
+		padding: 12px;
+		border-radius: 20px;
+		border: 1px solid var(--glass-border);
+		min-width: 220px;
+		max-height: 70vh;
+		overflow-y: auto;
+		box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+		scrollbar-width: thin;
+		scrollbar-color: var(--accent-primary) transparent;
+	}
+
+	.places-to-go::-webkit-scrollbar {
+		width: 4px;
+	}
+	
+	.places-to-go::-webkit-scrollbar-thumb {
+		background: var(--accent-primary);
+		border-radius: 10px;
 	}
 
 	.places-to-go button {
 		display: flex;
 		align-items: center;
-		gap: var(--space-sm);
-		padding: var(--space-xs) var(--space-sm);
-		background: var(--color-bg-glass);
-		backdrop-filter: blur(16px);
-		-webkit-backdrop-filter: blur(16px);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-sm);
+		gap: 12px;
+		background: rgba(255, 255, 255, 0.04);
+		border: 1px solid rgba(255, 255, 255, 0.05);
+		padding: 10px 14px;
+		border-radius: 14px;
 		cursor: pointer;
-		transition: all var(--transition-fast);
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		text-align: left;
+		width: 100%;
 	}
 
 	.places-to-go button:hover:not(:disabled) {
-		background: rgba(124, 92, 224, 0.15);
-		transform: translateX(4px);
+		background: rgba(255, 255, 255, 0.12);
+		border-color: var(--accent-primary);
+		transform: translateX(6px);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 	}
 
 	.places-to-go button:disabled {
-		opacity: 0.4;
+		opacity: 0.3;
 		cursor: not-allowed;
 	}
 
-	.places-to-go button img {
-		width: 20px;
-		height: 20px;
+	.places-to-go img {
+		width: 32px;
+		height: 32px;
+		filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 	}
 
-	.places-to-go button p {
-		font-size: 0.75rem;
-		color: var(--color-text-primary);
+	.places-to-go p {
 		margin: 0;
-	}
-
-	/* Music / Fullscreen - Top right */
-	.song-icon,
-	.fullscreen-icon {
-		position: fixed;
-		right: var(--space-md);
-		width: 40px;
-		height: 40px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: var(--color-bg-glass);
-		backdrop-filter: blur(16px);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
-		cursor: pointer;
-		opacity: 0.6;
-		transition: all var(--transition-fast);
-		z-index: 50;
-	}
-
-	.song-icon {
-		top: calc(var(--space-md) + 48px);
-	}
-	.fullscreen-icon {
-		top: calc(var(--space-md) + 96px);
-	}
-
-	.song-icon:hover,
-	.fullscreen-icon:hover {
-		opacity: 1;
-		background: rgba(255, 255, 255, 0.1);
-	}
-
-	.song-icon img,
-	.fullscreen-icon img {
-		width: 20px;
-		height: 20px;
-	}
-
-	/* Bottom right buttons */
-	.bottom-right-buttons {
-		position: fixed;
-		right: var(--space-md);
-		bottom: var(--space-md);
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-sm);
-		z-index: 50;
-	}
-
-	.bug-button,
-	.game-info-button {
-		width: 36px;
-		height: 36px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: var(--color-bg-glass);
-		backdrop-filter: blur(16px);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
-		cursor: pointer;
-		opacity: 0.5;
-		transition: all var(--transition-fast);
-	}
-
-	.bug-button:hover,
-	.game-info-button:hover {
-		opacity: 1;
-		background: rgba(255, 255, 255, 0.1);
-	}
-
-	.bug-button img,
-	.game-info-button img {
-		width: 18px;
-		height: 18px;
-	}
-
-	.wallet {
-		margin-top: var(--space-sm);
-		color: var(--color-accent-hp) !important;
-		user-select: all !important;
-		font-size: 0.7rem;
-	}
-
-	.support {
-		color: var(--color-accent-gold) !important;
-	}
-
-	/* Maintenance */
-	.maintenance-box {
-		position: fixed;
-		left: 50%;
-		top: 50%;
-		transform: translate(-50%, -50%);
-		background: var(--color-bg-dark);
-		backdrop-filter: blur(24px);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		padding: var(--space-xl);
-		text-align: center;
-		z-index: 1000;
-		max-width: 90vw;
+		font-size: 0.95rem;
+		font-weight: 700;
+		color: var(--text-main);
+		letter-spacing: 0.02em;
 	}
 
 	/* Responsive */
-	@media (max-width: 768px) {
-		/* Hide map, music, and fullscreen buttons on mobile */
-		.map-and-places > button,
-		.song-icon,
+	@media (max-width: 800px) {
+		.modal-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+		.glass-modal { padding: 2rem 1.5rem; border-radius: 24px; margin: 10px; }
+		.modal-header { margin-bottom: 1.5rem; }
+		.section-title { margin-bottom: 0.8rem; }
+		.modal-footer { margin-top: 2rem; }
+		
+		/* Smaller buttons on mobile */
+		.song-icon, .fullscreen-icon, .map-and-places > button, .bug-button, .game-info-button {
+			width: 40px;
+			height: 40px;
+			border-radius: 12px;
+		}
+		
+		.bottom-right-buttons {
+			bottom: 110px;
+			right: 12px;
+			gap: 10px;
+		}
+		
+		.map-and-places {
+			left: 12px;
+			top: 12px;
+		}
+		
+		.song-icon {
+			top: 12px;
+			right: 12px;
+		}
+		
 		.fullscreen-icon {
-			display: none !important;
+			top: 60px;
+			right: 12px;
 		}
 
-		.bottom-right-buttons {
-			display: none;
+		.places-to-go {
+			min-width: 200px;
+			max-height: 55vh;
+			border-radius: 16px;
+			padding: 10px;
+		}
+		
+		.places-to-go button {
+			padding: 8px 12px;
+			gap: 10px;
+		}
+		
+		.places-to-go p {
+			font-size: 0.85rem;
+		}
+		
+		.places-to-go img {
+			width: 28px;
+			height: 28px;
 		}
 	}
+
+	@media (max-height: 600px) {
+		.glass-modal { padding: 1.5rem; }
+		.modal-header { margin-bottom: 1rem; }
+		.modal-grid { gap: 1rem; }
+		.places-to-go { max-height: 50vh; }
+	}
 </style>
+

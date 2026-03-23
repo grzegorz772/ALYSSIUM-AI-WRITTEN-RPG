@@ -71,7 +71,6 @@
 					on:keydown={(e) => e.key === 'Enter' && emitInteractiveAnswer($misc.query)}
 					class="glass-input-field"
 				/>
-				<span class="points-badge glass-badge">{$misc.interactivePoints}</span>
 			</div>
 			<button
 				class="submit-btn glass-submit-btn"
@@ -136,6 +135,9 @@
 	}
 
 	.choices-list {
+		margin-right: auto;
+		margin-left: auto;
+		width: 93%;
 		margin-bottom: 1rem;
 		display: flex;
 		flex-direction: column;
@@ -194,13 +196,16 @@
 	}
 
 	.choice-text {
-		padding: 1rem !important;
+		padding: 0.3rem !important;
 		flex: 1; /* Allows text to grow */
 		color: var(--text-main);
 	}
 
 	/* Custom Input Group */
 	.custom-input {
+		width: 93%;
+		margin-left: auto;
+		margin-right: auto;
 		display: flex;
 		gap: var(--space-sm);
 		padding: var(--space-xs);

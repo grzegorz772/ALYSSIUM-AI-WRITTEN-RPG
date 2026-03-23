@@ -639,11 +639,6 @@ Don't forget to include at least 3 unique choices for the user to choose.`
 						class="story-section glass-module"
 						in:scale={{ duration: 600, start: 0.95, delay: 100, easing: backOut }}
 					>
-						<div class="module-header">
-							<span class="location-tag">{$misc.place || 'INITIALIZING...'}</span>
-							<span class="time-tag">{$misc.time}</span>
-						</div>
-						
 						<div class="viewport">
 							{#if $misc.loading}
 								<div class="neural-loading">
@@ -765,6 +760,7 @@ Don't forget to include at least 3 unique choices for the user to choose.`
 	.story-section {
 		margin-right: auto;
 		margin-left: auto;
+		min-width: 93%;
 		max-width: 93%;
 		min-height: 200px;
 		max-height: 55vh;

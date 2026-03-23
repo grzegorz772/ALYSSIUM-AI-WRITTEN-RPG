@@ -3,6 +3,8 @@
 	import UiButtons from '$lib/components/UiButtons.svelte'
 	import { game, character, misc } from '../stores'
 	import { onMount } from 'svelte'
+	import { fade, fly } from 'svelte/transition'
+	import { cubicOut } from 'svelte/easing'
 	
 	let gameComponent: any;
 	let miniMapGrid: any[] = [];
@@ -56,7 +58,6 @@
 			const tile = miniMapGrid[y]?.[x];
 			if (tile) {
 				console.log('📍 Selected tile:', tile);
-				// Możesz dodać tu wyświetlenie informacji o tile
 			}
 		}
 	}
@@ -90,44 +91,50 @@
 		<UiButtons />
 	</div>
 	
-	<!-- PRZYCISK OTWIERAJĄCY PANEL - zawsze widoczny po starcie gry -->
 	{#if $misc.started}
-		<button class="toggle-panel-btn" on:click={togglePanel} class:active={isPanelOpen}>
-			<span class="btn-icon">{isPanelOpen ? '✕' : '⚙️'}</span>
-			<span class="btn-text">{isPanelOpen ? 'CLOSE' : 'MENU'}</span>
-		</button>
+		<!-- CENTERED TOGGLE BUTTON -->
+		<div class="bottom-controls-wrapper">
+			<button class="center-toggle-btn" on:click={togglePanel} class:active={isPanelOpen}>
+				<div class="btn-inner">
+					<span class="icon">{isPanelOpen ? '✕' : 'MENU'}</span>
+				</div>
+			</button>
+		</div>
 		
-		<!-- WYSUWANY PANEL Z LIQUID GLASS BLUR -->
+		<!-- LIQUID GLASS SLIDE PANEL -->
 		<div class="slide-panel" class:open={isPanelOpen}>
-			<div class="panel-content">
-				<!-- LEWA SEKCJA -->
-				<div class="left-section">
-					<div class="buttons-container">
-						<button class="action-btn equipment" on:click={() => console.log('Equipment clicked')}>
-							<span class="btn-emoji">⚔️</span>
-							<span class="btn-label">EQUIPMENT</span>
-						</button>
-						<button class="action-btn buildings" on:click={() => console.log('Buildings clicked')}>
-							<span class="btn-emoji">🏛️</span>
-							<span class="btn-label">BUILDINGS</span>
-						</button>
+			<div class="panel-content glass-container">
+				<div class="panel-layout">
+					<!-- LEFT: STATS (COINS & TIME) -->
+					<div class="panel-section stats-section">
+						<div class="stat-item gold">
+							<img src="images/gold.svg" alt="gold" class="stat-icon" />
+							<span class="stat-value">{$character.gold}</span>
+						</div>
+						<div class="stat-item time">
+							<img src="images/time.svg" alt="time" class="stat-icon" />
+							<span class="stat-value">{$game.gameData.placeAndTime?.time || '00:00'}</span>
+						</div>
 					</div>
 					
-					<div class="quick-items">
-						<div class="quick-slot">1</div>
-						<div class="quick-slot">2</div>
-						<div class="quick-slot">3</div>
-						<div class="quick-slot">4</div>
-						<div class="quick-slot">5</div>
+					<!-- MIDDLE: ACTIONS -->
+					<div class="panel-section actions-section">
+						<div class="action-buttons">
+							<button class="action-btn glass-btn" on:click={() => console.log('Inventory')}>
+								<img src="images/item.svg" alt="inv" />
+								<span>EQUIPMENT</span>
+							</button>
+							<button class="action-btn glass-btn" on:click={() => console.log('Map')}>
+								<img src="images/map.svg" alt="map" />
+								<span>WORLD</span>
+							</button>
+						</div>
 					</div>
-				</div>
-				
-				<!-- PRAWA SEKCJA - Mapa -->
-				<div class="right-section">
-					<div class="map-wrapper">
-						<div class="map-preview" on:click={handleMiniMapClick}>
-							<canvas id="miniMapCanvas" width="160" height="160" style="width: 160px; height: 160px; image-rendering: crisp-edges;"></canvas>
-							<span class="map-label">MAP</span>
+					
+					<!-- RIGHT: MINIMAP -->
+					<div class="panel-section map-section">
+						<div class="mini-map-container" on:click={handleMiniMapClick}>
+							<canvas id="miniMapCanvas" width="120" height="120"></canvas>
 						</div>
 					</div>
 				</div>
@@ -137,73 +144,89 @@
 </main>
 
 <style>
+	:root {
+		--glass-bg: rgba(15, 18, 25, 0.7);
+		--glass-border: rgba(255, 255, 255, 0.1);
+		--accent-primary: #00f2ff;
+		--accent-secondary: #7000ff;
+		--text-main: #f0f0f0;
+	}
+
 	.game-layout {
 		min-height: 100vh;
 		display: flex;
 		flex-direction: column;
-		background: #0a0c12;
+		background: #050508;
 		position: relative;
+		overflow: hidden;
 	}
 	
 	.game-content {
 		padding: 0 !important;
 		flex: 1;
-		padding: 20px;
-		padding-bottom: 20px;
-		max-width: 800px;
 		width: 100%;
+		max-width: 1000px;
 		margin: 0 auto;
-		overflow-y: auto;
+		z-index: 10;
 	}
 	
 	/* ============================================
-	PRZYCISK OTWIERAJĄCY PANEL
+	BOTTOM CONTROLS & TOGGLE
 	============================================ */
-	.toggle-panel-btn {
+	.bottom-controls-wrapper {
 		position: fixed;
 		bottom: 20px;
-		right: 20px;
-		width: 60px;
-		height: 60px;
-		border-radius: 30px;
-		background: linear-gradient(135deg, rgba(255, 170, 68, 0.95), rgba(255, 140, 0, 0.95));
+		left: 50%;
+		transform: translateX(-50%);
+		z-index: 300;
+		pointer-events: none;
+	}
+	
+	.center-toggle-btn {
+		pointer-events: auto;
+		background: none;
 		border: none;
-		color: white;
+		padding: 0;
 		cursor: pointer;
-		z-index: 200;
+		transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+	
+	.center-toggle-btn:hover {
+		transform: scale(1.1);
+	}
+	
+	.btn-inner {
+		background: var(--glass-bg);
+		backdrop-filter: blur(20px);
+		border: 1px solid var(--glass-border);
+		width: 80px;
+		height: 40px;
+		border-radius: 20px;
 		display: flex;
-		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: 2px;
-		transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-		box-shadow: 0 4px 20px rgba(255, 170, 68, 0.4);
-		backdrop-filter: blur(10px);
+		box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
 	}
 	
-	.toggle-panel-btn:hover {
-		transform: scale(1.1);
-		box-shadow: 0 6px 25px rgba(255, 170, 68, 0.6);
+	.btn-inner .icon {
+		font-size: 0.7rem;
+		font-weight: 800;
+		letter-spacing: 0.1em;
+		color: var(--accent-primary);
+		text-shadow: 0 0 10px rgba(0, 242, 255, 0.4);
 	}
 	
-	.toggle-panel-btn.active {
-		background: linear-gradient(135deg, rgba(255, 80, 80, 0.95), rgba(200, 50, 50, 0.95));
-		box-shadow: 0 4px 20px rgba(255, 80, 80, 0.4);
+	.center-toggle-btn.active .btn-inner {
+		border-color: var(--accent-secondary);
 	}
 	
-	.btn-icon {
-		font-size: 24px;
-		font-weight: bold;
-	}
-	
-	.btn-text {
-		font-size: 10px;
-		font-weight: bold;
-		letter-spacing: 1px;
+	.center-toggle-btn.active .icon {
+		color: #ff3e3e;
+		text-shadow: 0 0 10px rgba(255, 62, 62, 0.4);
 	}
 	
 	/* ============================================
-	WYSUWANY PANEL - LIQUID GLASS BLUR
+	LIQUID GLASS SLIDE PANEL
 	============================================ */
 	.slide-panel {
 		position: fixed;
@@ -211,315 +234,158 @@
 		left: 0;
 		right: 0;
 		transform: translateY(100%);
-		transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-		z-index: 150;
-		pointer-events: none;
+		transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+		z-index: 200;
 	}
 	
 	.slide-panel.open {
 		transform: translateY(0);
-		pointer-events: auto;
 	}
 	
 	.panel-content {
-		background: rgba(20, 25, 40, 0.85);
-		backdrop-filter: blur(20px) saturate(180%);
-		-webkit-backdrop-filter: blur(20px) saturate(180%);
-		border-top: 1px solid rgba(255, 255, 255, 0.2);
-		border-radius: 24px 24px 0 0;
-		padding: 20px 24px;
-		display: flex;
-		justify-content: space-between;
+		background: var(--glass-bg);
+		backdrop-filter: blur(40px) saturate(150%);
+		-webkit-backdrop-filter: blur(40px) saturate(150%);
+		border-top: 1px solid var(--glass-border);
+		border-radius: 32px 32px 0 0;
+		padding: 30px 40px 60px 40px;
+		box-shadow: 0 -15px 50px rgba(0, 0, 0, 0.6);
+	}
+	
+	.panel-layout {
+		display: grid;
+		grid-template-columns: 1fr 2fr 1fr;
+		gap: 30px;
 		align-items: center;
-		gap: 20px;
-		box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.3);
-		animation: glassPulse 2s ease-in-out infinite;
+		max-width: 1000px;
+		margin: 0 auto;
 	}
 	
-	@keyframes glassPulse {
-		0%, 100% {
-			background: rgba(20, 25, 40, 0.85);
-			border-top-color: rgba(255, 255, 255, 0.2);
-		}
-		50% {
-			background: rgba(30, 35, 55, 0.9);
-			border-top-color: rgba(255, 170, 68, 0.4);
-		}
-	}
-	
-	/* LEWA SEKCJA */
-	.left-section {
+	/* Stats Section */
+	.stats-section {
 		display: flex;
 		flex-direction: column;
+		gap: 15px;
+	}
+	
+	.stat-item {
+		display: flex;
+		align-items: center;
 		gap: 12px;
-		flex: 1;
-	}
-	
-	.buttons-container {
-		display: flex;
-		gap: 12px;
-	}
-	
-	.action-btn {
-		background: rgba(0, 0, 0, 0.6);
-		backdrop-filter: blur(10px);
-		border: 1px solid rgba(255, 170, 68, 0.6);
-		color: #ffaa44;
-		padding: 12px 20px;
-		border-radius: 12px;
-		font-size: 13px;
-		font-weight: bold;
-		cursor: pointer;
-		transition: all 0.3s ease;
-		text-transform: uppercase;
-		letter-spacing: 1px;
-		white-space: nowrap;
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		flex: 1;
-		justify-content: center;
-	}
-	
-	.action-btn:hover {
-		background: rgba(255, 170, 68, 0.2);
-		border-color: #ffaa44;
-		transform: translateY(-2px);
-		box-shadow: 0 5px 15px rgba(255, 170, 68, 0.3);
-	}
-	
-	.btn-emoji {
-		font-size: 18px;
-	}
-	
-	.btn-label {
-		font-size: 12px;
-	}
-	
-	.quick-items {
-		display: flex;
-		gap: 10px;
-	}
-	
-	.quick-slot {
-		width: 50px;
-		height: 50px;
-		background: rgba(0, 0, 0, 0.6);
-		backdrop-filter: blur(10px);
-		border: 2px solid rgba(255, 170, 68, 0.6);
-		border-radius: 12px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-size: 16px;
-		font-weight: bold;
-		color: #ffaa44;
-		cursor: pointer;
-		transition: all 0.2s;
-	}
-	
-	.quick-slot:hover {
-		border-color: #ffaa44;
-		background: rgba(255, 170, 68, 0.2);
-		transform: scale(1.05);
-		box-shadow: 0 0 15px rgba(255, 170, 68, 0.3);
-	}
-	
-	/* PRAWA SEKCJA - Mapa */
-	.right-section {
-		display: flex;
-		align-items: center;
-	}
-	
-	.map-wrapper {
-		display: flex;
-		flex-direction: column;
-	}
-	
-	.map-preview {
-		position: relative;
-		cursor: pointer;
-		transition: transform 0.3s ease;
-	}
-	
-	.map-preview:hover {
-		transform: scale(1.05);
-	}
-	
-	.map-preview canvas {
-		border: 2px solid rgba(255, 170, 68, 0.8);
-		border-radius: 12px;
-		background: rgba(0, 0, 0, 0.5);
-		box-shadow: 0 0 30px rgba(255, 170, 68, 0.2);
-		display: block;
+		padding: 10px 18px;
+		background: rgba(255, 255, 255, 0.03);
+		border: 1px solid var(--glass-border);
+		border-radius: 16px;
 		transition: all 0.3s;
 	}
 	
-	.map-preview:hover canvas {
-		border-color: #ffaa44;
-		box-shadow: 0 0 40px rgba(255, 170, 68, 0.4);
+	.stat-item:hover {
+		background: rgba(255, 255, 255, 0.06);
+		border-color: rgba(255, 255, 255, 0.2);
 	}
 	
-	.map-label {
-		position: absolute;
-		bottom: 8px;
-		right: 10px;
-		font-size: 11px;
-		color: #ffaa44;
-		background: rgba(0, 0, 0, 0.8);
-		backdrop-filter: blur(5px);
-		padding: 3px 8px;
-		border-radius: 6px;
-		letter-spacing: 1px;
-		font-weight: bold;
-		border: 1px solid rgba(255, 170, 68, 0.3);
+	.stat-icon {
+		width: 20px;
+		height: 20px;
 	}
 	
-	/* ============================================
-	RESPONSYWNOŚĆ
-	============================================ */
-	@media (max-width: 768px) {
+	.stat-value {
+		font-size: 1.1rem;
+		font-weight: 700;
+		font-family: monospace;
+		color: var(--text-main);
+	}
+	
+	.stat-item.gold .stat-value { color: #fcc419; }
+	.stat-item.time .stat-value { color: var(--accent-primary); }
+	
+	/* Actions Section */
+	.action-buttons {
+		display: flex;
+		justify-content: center;
+		gap: 20px;
+	}
+	
+	.glass-btn {
+		background: rgba(255, 255, 255, 0.03);
+		border: 1px solid var(--glass-border);
+		border-radius: 20px;
+		padding: 20px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 10px;
+		cursor: pointer;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		min-width: 120px;
+	}
+	
+	.glass-btn:hover {
+		background: rgba(255, 255, 255, 0.08);
+		border-color: var(--accent-primary);
+		transform: translateY(-5px);
+		box-shadow: 0 10px 20px rgba(0, 242, 255, 0.1);
+	}
+	
+	.glass-btn img {
+		width: 32px;
+		height: 32px;
+		opacity: 0.8;
+	}
+	
+	.glass-btn span {
+		font-size: 0.75rem;
+		font-weight: 800;
+		letter-spacing: 0.1em;
+		color: var(--text-main);
+	}
+	
+	/* Map Section */
+	.mini-map-container {
+		width: 120px;
+		height: 120px;
+		border-radius: 20px;
+		overflow: hidden;
+		border: 1px solid var(--glass-border);
+		background: rgba(0, 0, 0, 0.4);
+		cursor: pointer;
+		transition: all 0.3s;
+		margin: 0 auto;
+	}
+	
+	.mini-map-container:hover {
+		border-color: var(--accent-primary);
+		box-shadow: 0 0 20px rgba(0, 242, 255, 0.2);
+	}
+	
+	canvas {
+		display: block;
+		image-rendering: pixelated;
+	}
+	
+	/* Responsive */
+	@media (max-width: 900px) {
+		.panel-layout {
+			grid-template-columns: 1fr 1.5fr;
+			gap: 20px;
+		}
+		.map-section { display: none; }
+	}
+	
+	@media (max-width: 600px) {
+		.panel-layout {
+			grid-template-columns: 1fr;
+			gap: 20px;
+		}
 		.panel-content {
-			padding: 16px 20px;
-			flex-direction: column;
-			gap: 16px;
+			padding: 20px 20px 70px 20px;
 		}
-		
-		.left-section {
-			width: 100%;
-		}
-		
-		.buttons-container {
+		.action-buttons {
 			gap: 10px;
 		}
-		
-		.action-btn {
-			padding: 10px 16px;
-			font-size: 11px;
-		}
-		
-		.btn-emoji {
-			font-size: 16px;
-		}
-		
-		.btn-label {
-			font-size: 10px;
-		}
-		
-		.quick-slot {
-			width: 45px;
-			height: 45px;
-			font-size: 14px;
-		}
-		
-		.map-preview canvas {
-			width: 130px;
-			height: 130px;
-		}
-		
-		.toggle-panel-btn {
-			bottom: 15px;
-			right: 15px;
-			width: 55px;
-			height: 55px;
-		}
-		
-		.btn-icon {
-			font-size: 22px;
-		}
-	}
-	
-	@media (max-width: 480px) {
-		.panel-content {
-			padding: 14px 16px;
-			gap: 12px;
-		}
-		
-		.buttons-container {
-			gap: 8px;
-			flex-direction: column;
-		}
-		
-		.action-btn {
-			padding: 8px 12px;
-			justify-content: center;
-		}
-		
-		.quick-items {
-			gap: 8px;
-			justify-content: center;
-		}
-		
-		.quick-slot {
-			width: 40px;
-			height: 40px;
-			font-size: 12px;
-		}
-		
-		.map-preview canvas {
-			width: 110px;
-			height: 110px;
-		}
-		
-		.map-label {
-			font-size: 9px;
-			bottom: 5px;
-			right: 6px;
-			padding: 2px 6px;
-		}
-		
-		.toggle-panel-btn {
-			bottom: 12px;
-			right: 12px;
-			width: 50px;
-			height: 50px;
-		}
-		
-		.btn-icon {
-			font-size: 20px;
-		}
-		
-		.btn-text {
-			font-size: 9px;
-		}
-	}
-	
-	/* Animacja płynnego pojawiania się */
-	@keyframes slideInUp {
-		from {
-			transform: translateY(100%);
-			opacity: 0;
-		}
-		to {
-			transform: translateY(0);
-			opacity: 1;
-		}
-	}
-	
-	.slide-panel.open .panel-content {
-		animation: slideInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-	}
-	
-	/* Efekt szkła na całym panelu */
-	.slide-panel.open::before {
-		content: '';
-		position: fixed;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background: rgba(0, 0, 0, 0.3);
-		backdrop-filter: blur(5px);
-		z-index: -1;
-		animation: fadeIn 0.3s ease;
-	}
-	
-	@keyframes fadeIn {
-		from {
-			opacity: 0;
-		}
-		to {
-			opacity: 1;
+		.glass-btn {
+			min-width: 100px;
+			padding: 15px;
 		}
 	}
 </style>
