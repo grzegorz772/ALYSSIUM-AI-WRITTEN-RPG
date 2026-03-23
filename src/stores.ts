@@ -71,7 +71,8 @@ export const misc: Writable<MiscState> = writable({
 	bugWindow: false,
 	maintenanceWindow: false,
 	started: false,
-	heroClass: ''
+	heroClass: '',
+	showMapModal: false
 })
 
 // Background image store

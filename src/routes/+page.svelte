@@ -10,6 +10,7 @@
 	let miniMapGrid: any[] = [];
 	let isPanelOpen = false;
 	let mapOn = false;
+	let selectedTile: any = null;
 
 	// Audio logic
 	let audioElement: any
@@ -38,40 +39,56 @@
 		}
 	}
 	
-	function updateMiniMap() {
-		if (gameComponent && gameComponent.getMapGridFromGame) {
-			const newGrid = gameComponent.getMapGridFromGame();
-			if (newGrid && newGrid.length > 0) {
-				miniMapGrid = newGrid;
-				drawMiniMap();
-			}
-		}
-	}
-	
-	function drawMiniMap() {
-		const canvas = document.getElementById('miniMapCanvas') as HTMLCanvasElement | null;
-		if (!canvas || !miniMapGrid.length) return;
+	function drawMap(canvasId: string, grid: any[], showSelection = false) {
+		const canvas = document.getElementById(canvasId) as HTMLCanvasElement | null;
+		if (!canvas || !grid.length) return;
 		const ctx = canvas.getContext('2d');
 		if (!ctx) return;
 		
-		const size = miniMapGrid.length;
+		const size = grid.length;
 		const cellSize = canvas.width / size;
 		
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 		
 		for (let y = 0; y < size; y++) {
 			for (let x = 0; x < size; x++) {
-				const tile = miniMapGrid[y]?.[x];
+				const tile = grid[y]?.[x];
 				if (tile) {
 					ctx.fillStyle = tile.color;
-					ctx.fillRect(x * cellSize, y * cellSize, cellSize - 0.5, cellSize - 0.5);
+					ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+					
+					// Draw border between regions
+					ctx.strokeStyle = "rgba(0,0,0,0.1)";
+					ctx.lineWidth = 0.5;
+					ctx.strokeRect(x * cellSize, y * cellSize, cellSize, cellSize);
 				}
 			}
 		}
+
+		if (showSelection && selectedTile) {
+			ctx.strokeStyle = "#00f2ff";
+			ctx.lineWidth = 3;
+			ctx.strokeRect(selectedTile.x * cellSize + 2, selectedTile.y * cellSize + 2, cellSize - 4, cellSize - 4);
+			
+			// Outer glow
+			ctx.shadowBlur = 10;
+			ctx.shadowColor = "#00f2ff";
+			ctx.strokeRect(selectedTile.x * cellSize + 2, selectedTile.y * cellSize + 2, cellSize - 4, cellSize - 4);
+			ctx.shadowBlur = 0;
+		}
+	}
+
+	function openMapModal() {
+		$misc.showMapModal = true;
+		selectedTile = null;
+		// Wait for DOM
+		setTimeout(() => {
+			drawMap('fullscreenMapCanvas', miniMapGrid, true);
+		}, 100);
 	}
 	
-	function handleMiniMapClick(e: MouseEvent) {
-		const canvas = document.getElementById('miniMapCanvas') as HTMLCanvasElement | null;
+	function handleFullscreenMapClick(e: MouseEvent) {
+		const canvas = document.getElementById('fullscreenMapCanvas') as HTMLCanvasElement | null;
 		if (!canvas || !miniMapGrid.length) return;
 		const rect = canvas.getBoundingClientRect();
 		const scaleX = canvas.width / rect.width;
@@ -83,10 +100,8 @@
 		const y = Math.floor(mouseY / (canvas.height / size));
 		
 		if (x >= 0 && x < size && y >= 0 && y < size) {
-			const tile = miniMapGrid[y]?.[x];
-			if (tile) {
-				console.log('📍 Selected tile:', tile);
-			}
+			selectedTile = { x, y };
+			drawMap('fullscreenMapCanvas', miniMapGrid, true);
 		}
 	}
 	
@@ -99,12 +114,15 @@
 		const interval = setInterval(() => {
 			if (gameComponent && gameComponent.getMapGridFromGame && $misc.started) {
 				const grid = gameComponent.getMapGridFromGame();
-				if (grid && grid.length > 0 && miniMapGrid.length === 0) {
+				if (grid && grid.length > 0) {
 					miniMapGrid = grid;
-					drawMiniMap();
+					drawMap('miniMapCanvas', miniMapGrid);
+					if ($misc.showMapModal) {
+						drawMap('fullscreenMapCanvas', miniMapGrid, true);
+					}
 				}
 			}
-		}, 500);
+		}, 1000);
 		
 		return () => clearInterval(interval);
 	});
@@ -205,8 +223,9 @@
 					
 					<!-- RIGHT-CENTER: MINIMAP -->
 					<div class="panel-section map-section">
-						<div class="mini-map-container" on:click={handleMiniMapClick}>
+						<div class="circular-minimap" on:click={openMapModal}>
 							<canvas id="miniMapCanvas" width="120" height="120"></canvas>
+							<div class="map-overlay-hint">MAP</div>
 						</div>
 					</div>
 
@@ -220,6 +239,60 @@
 							<img src="images/info.svg" alt="info" />
 							<span>INFO</span>
 						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+	<!-- FULLSCREEN MAP MODAL -->
+	{#if $misc.showMapModal}
+		<div class="modal-overlay map-modal-overlay" transition:fade={{ duration: 300 }} on:click|self={() => $misc.showMapModal = false}>
+			<div class="glass-modal map-fullscreen-modal" in:scale={{ duration: 400, start: 0.9, easing: cubicOut }}>
+				<button class="close-btn" on:click={() => ($misc.showMapModal = false)}>
+					<span class="icon">✕</span>
+				</button>
+
+				<header class="modal-header">
+					<h2 class="title">WORLD ATLAS</h2>
+					<p class="subtitle">Procedural Territory Mapping</p>
+				</header>
+
+				<div class="map-modal-content">
+					<div class="canvas-wrapper glass-container">
+						<canvas 
+							id="fullscreenMapCanvas" 
+							width="600" 
+							height="600" 
+							on:click={handleFullscreenMapClick}
+						></canvas>
+					</div>
+
+					<div class="map-details-panel glass-container">
+						{#if selectedTile}
+							{@const tile = miniMapGrid[selectedTile.y]?.[selectedTile.x]}
+							<div class="tile-info" in:fade>
+								<div class="tile-header">
+									<div class="type-badge" style="background: {tile.color}">{tile.type}</div>
+									<h3 class="tile-name">{tile.name}</h3>
+								</div>
+								<p class="tile-desc">{tile.description}</p>
+								<div class="tile-coords">
+									<span>LAT: {selectedTile.y}</span>
+									<span>LNG: {selectedTile.x}</span>
+								</div>
+								<div class="tile-actions">
+									<button class="travel-btn" on:click={() => handleAnswer(`I'll travel to ${tile.name}`)}>
+										TRAVEL HERE
+									</button>
+								</div>
+							</div>
+						{:else}
+							<div class="no-selection">
+								<div class="scanner-icon">📡</div>
+								<p>SELECT COORDINATES ON THE ATLAS</p>
+							</div>
+						{/if}
 					</div>
 				</div>
 			</div>
@@ -528,181 +601,200 @@
 	}
 	
 	/* Map Section */
-	.mini-map-container {
+	.circular-minimap {
 		width: 100px;
 		height: 100px;
-		border-radius: 16px;
+		border-radius: 50%;
 		overflow: hidden;
-		border: 1px solid var(--glass-border);
+		border: 3px solid var(--glass-border);
 		background: rgba(0, 0, 0, 0.4);
 		cursor: pointer;
-		transition: all 0.3s;
+		transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+		position: relative;
+		box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
 	}
 	
-	.mini-map-container:hover {
+	.circular-minimap:hover {
 		border-color: var(--accent-primary);
-		box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
+		transform: scale(1.1) rotate(5deg);
+		box-shadow: 0 0 30px rgba(0, 242, 255, 0.2);
 	}
-	
-	canvas {
+
+	.circular-minimap canvas {
+		width: 100%;
+		height: 100%;
 		display: block;
 		image-rendering: pixelated;
 	}
 
-	/* Buildings Menu */
-	.places-to-go-wrapper {
+	.map-overlay-hint {
 		position: absolute;
-		bottom: 100%;
-		left: 40px;
-		padding-bottom: 20px;
-		z-index: 210;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.4);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 0.6rem;
+		font-weight: 900;
+		color: var(--accent-primary);
+		opacity: 0;
+		transition: opacity 0.3s;
+		letter-spacing: 0.2em;
 	}
 
-	.places-to-go {
-		background: var(--glass-bg);
-		backdrop-filter: blur(40px);
-		border: 1px solid var(--glass-border);
+	.circular-minimap:hover .map-overlay-hint {
+		opacity: 1;
+	}
+
+	/* Map Modal Styles */
+	.map-fullscreen-modal {
+		max-width: 1000px;
+		padding: 2.5rem;
+		overflow: hidden;
+	}
+
+	.map-modal-content {
+		display: grid;
+		grid-template-columns: 1fr 320px;
+		gap: 2.5rem;
+		margin-top: 1rem;
+	}
+
+	.canvas-wrapper {
+		background: rgba(0, 0, 0, 0.3);
 		border-radius: 20px;
-		padding: 12px;
+		padding: 10px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border: 1px solid var(--glass-border);
+	}
+
+	#fullscreenMapCanvas {
+		max-width: 100%;
+		height: auto;
+		cursor: crosshair;
+		image-rendering: pixelated;
+		border-radius: 12px;
+	}
+
+	.map-details-panel {
+		background: rgba(255, 255, 255, 0.02);
+		border-radius: 24px;
+		padding: 1.5rem;
+		border: 1px solid var(--glass-border);
 		display: flex;
 		flex-direction: column;
-		gap: 8px;
-		min-width: 200px;
-		box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
+		min-height: 400px;
 	}
 
-	.places-to-go button {
+	.tile-info {
 		display: flex;
-		align-items: center;
-		gap: 12px;
-		background: rgba(255, 255, 255, 0.05);
-		border: 1px solid transparent;
-		padding: 10px 14px;
-		border-radius: 12px;
-		cursor: pointer;
-		transition: all 0.2s;
-		width: 100%;
-		text-align: left;
+		flex-direction: column;
+		gap: 1.2rem;
 	}
 
-	.places-to-go button:hover:not(:disabled) {
-		background: rgba(255, 255, 255, 0.1);
-		border-color: var(--accent-primary);
-		transform: translateX(5px);
-	}
-
-	.places-to-go button img {
-		width: 28px;
-		height: 28px;
-	}
-
-	.places-to-go button span {
-		color: var(--text-main);
-		font-weight: 700;
-		font-size: 0.9rem;
-	}
-
-	.places-to-go button:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-	}
-
-	/* Modals */
-	.modal-overlay {
-		position: fixed;
-		inset: 0;
-		background: rgba(0, 0, 0, 0.6);
-		backdrop-filter: blur(10px);
-		z-index: 1000;
+	.tile-header {
 		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 2rem;
+		flex-direction: column;
+		gap: 0.5rem;
 	}
 
-	.glass-modal {
-		background: var(--glass-bg);
-		backdrop-filter: blur(40px) saturate(150%);
-		border: 1px solid var(--glass-border);
-		border-radius: 32px;
-		padding: 3rem;
-		width: 100%;
-		max-width: 800px;
-		max-height: 90vh;
-		overflow-y: auto;
-		position: relative;
-		box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+	.type-badge {
+		align-self: flex-start;
+		padding: 4px 12px;
+		border-radius: 20px;
+		font-size: 0.65rem;
+		font-weight: 900;
+		text-transform: uppercase;
+		color: rgba(0, 0, 0, 0.7);
+		letter-spacing: 0.05em;
 	}
 
-	.bug-window { max-width: 500px; text-align: center; }
-
-	.modal-header { margin-bottom: 2.5rem; }
-	.title {
-		font-size: 2rem;
+	.tile-name {
+		font-size: 1.5rem;
 		font-weight: 800;
-		background: linear-gradient(to right, #fff, var(--text-dim));
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-	}
-	.subtitle { color: var(--accent-primary); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
-
-	.modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; }
-	.section-title { font-weight: 800; color: #fff; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.8rem; }
-	.info-list { list-style: none; padding: 0; }
-	.info-list li { color: var(--text-dim); line-height: 1.6; margin-bottom: 0.8rem; padding-left: 1.2rem; position: relative; }
-	.info-list li::before { content: ""; position: absolute; left: 0; top: 0.7rem; width: 4px; height: 4px; background: var(--accent-primary); border-radius: 50%; }
-
-	.bug-content { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
-	.warning-icon { font-size: 3rem; }
-	.protocol-status { background: rgba(0, 0, 0, 0.3); padding: 0.8rem 1.5rem; border-radius: 12px; border: 1px solid var(--glass-border); display: flex; gap: 1rem; font-size: 0.8rem; font-weight: 800; }
-	.status-value { color: #00ffaa; }
-
-	.close-btn {
-		position: absolute;
-		top: 1.5rem;
-		right: 1.5rem;
-		background: rgba(255, 255, 255, 0.05);
-		border: 1px solid var(--glass-border);
-		width: 40px;
-		height: 40px;
-		border-radius: 50%;
 		color: #fff;
-		cursor: pointer;
+		margin: 0;
+	}
+
+	.tile-desc {
+		font-size: 0.95rem;
+		color: var(--text-dim);
+		line-height: 1.6;
+		margin: 0;
+	}
+
+	.tile-coords {
 		display: flex;
+		gap: 1rem;
+		font-family: monospace;
+		font-size: 0.8rem;
+		color: var(--accent-primary);
+		background: rgba(0, 0, 0, 0.2);
+		padding: 8px 12px;
+		border-radius: 8px;
+	}
+
+	.tile-actions {
+		margin-top: auto;
+	}
+
+	.travel-btn {
+		width: 100%;
+		padding: 1rem;
+		background: var(--accent-primary);
+		color: #000;
+		border: none;
+		border-radius: 14px;
+		font-weight: 800;
+		cursor: pointer;
+		transition: all 0.3s;
+		letter-spacing: 0.05em;
+	}
+
+	.travel-btn:hover {
+		transform: scale(1.02);
+		filter: brightness(1.1);
+		box-shadow: 0 0 20px rgba(0, 242, 255, 0.3);
+	}
+
+	.no-selection {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		transition: all 0.3s;
+		text-align: center;
+		gap: 1.5rem;
+		color: var(--text-dim);
 	}
-	.close-btn:hover { border-color: #ff3e3e; color: #ff3e3e; transform: rotate(90deg); }
 
-	.modal-footer { margin-top: 3rem; text-align: center; }
-	.copyright { font-size: 0.7rem; color: var(--text-dim); font-family: monospace; }
-	
-	/* Responsive */
-	@media (max-width: 1000px) {
-		.panel-layout {
-			grid-template-columns: 1fr 1.2fr 1fr;
-			grid-template-rows: auto auto;
-		}
-		.stats-section { grid-column: 1; grid-row: 1; }
-		.actions-section { grid-column: 2; grid-row: 1 / span 2; }
-		.map-section { grid-column: 3; grid-row: 1; }
-		.utils-section-left { grid-column: 1; grid-row: 2; }
-		.utils-section-right { grid-column: 3; grid-row: 2; }
-		.places-to-go-wrapper { left: 20px; }
+	.scanner-icon {
+		font-size: 3rem;
+		animation: pulse-scanner 2s infinite;
 	}
-	
-	@media (max-width: 600px) {
-		.panel-layout {
-			grid-template-columns: 1fr 1fr;
-			gap: 15px;
-		}
-		.actions-section { grid-column: 1 / span 2; grid-row: 1; }
-		.stats-section { grid-column: 1; grid-row: 2; }
-		.map-section { grid-column: 2; grid-row: 2; }
-		.utils-section-left { grid-column: 1; grid-row: 3; }
-		.utils-section-right { grid-column: 2; grid-row: 3; }
-		.panel-content { padding: 20px 20px 70px 20px; }
-		.modal-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+
+	@keyframes pulse-scanner {
+		0%, 100% { transform: scale(1); opacity: 0.5; }
+		50% { transform: scale(1.1); opacity: 1; }
 	}
-</style>
+
+	.no-selection p {
+		font-size: 0.75rem;
+		font-weight: 800;
+		letter-spacing: 0.15em;
+		max-width: 200px;
+	}
+
+	/* Responsive Map */
+	@media (max-width: 900px) {
+		.map-modal-content {
+			grid-template-columns: 1fr;
+		}
+		.map-details-panel {
+			min-height: auto;
+		}
+	}
+
+	/* Buildings Menu */
