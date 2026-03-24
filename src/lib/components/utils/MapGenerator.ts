@@ -656,18 +656,30 @@ export function buildFullWorldWithStaticData(): any {
     }
   };
 
+  const seed = fullWorldData.seed || 1337;
+
   for (const [regionId, region] of Object.entries(worldWithStatic.regions) as [string, any][]) {
     if (region.type === 'city') {
-      const buildingKeys = Object.keys(staticDataTemplates.buildings);
-      const shuffled = [...buildingKeys].sort(() => Math.random() - 0.5);
-      const selectedBuildings = shuffled.slice(0, 3);
+      // Check if buildings already exist to maintain state, or generate deterministically
+      if (!region.buildings || !region.buildings.ids || region.buildings.ids.length === 0) {
+        const buildingKeys = Object.keys(staticDataTemplates.buildings);
+        
+        // Deterministic shuffle using regionId and world seed
+        const deterministicShuffled = [...buildingKeys].sort((a, b) => {
+          const hashA = (parseInt(regionId) * 17 + a.length * 31 + seed) % 100;
+          const hashB = (parseInt(regionId) * 17 + b.length * 31 + seed) % 100;
+          return hashA - hashB;
+        });
+        
+        const selectedBuildings = deterministicShuffled.slice(0, 3);
+        
+        region.buildings = {
+          amount: 3,
+          ids: selectedBuildings
+        };
+      }
       
-      region.buildings = {
-        amount: 3,
-        ids: selectedBuildings
-      };
-      
-      for (const buildingId of selectedBuildings) {
+      for (const buildingId of region.buildings.ids) {
         if (!worldWithStatic.addedStaticData.buildings[buildingId]) {
           worldWithStatic.addedStaticData.buildings[buildingId] = {
             ...staticDataTemplates.buildings[buildingId as keyof typeof staticDataTemplates.buildings],
@@ -679,11 +691,13 @@ export function buildFullWorldWithStaticData(): any {
     
     if (region.enemy?.isEnemy === true) {
       const enemyId = `${regionId}_enemy`;
-      worldWithStatic.addedStaticData.enemies[enemyId] = {
-        ...staticDataTemplates.enemies["001"],
-        id: enemyId,
-        name: `Guardian of ${region.name}`
-      };
+      if (!worldWithStatic.addedStaticData.enemies[enemyId]) {
+        worldWithStatic.addedStaticData.enemies[enemyId] = {
+          ...staticDataTemplates.enemies["001"],
+          id: enemyId,
+          name: `Guardian of ${region.name}`
+        };
+      }
       region.enemy.id = enemyId;
     }
   }

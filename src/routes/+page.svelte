@@ -14,6 +14,11 @@
 	let inventoryOn = false;
 	let selectedTile: any = null;
 	let selectedBuilding: any = null;
+	let expandedBuildingId: string | null = null;
+
+	function toggleBuildingAccordion(id: string) {
+		expandedBuildingId = expandedBuildingId === id ? null : id;
+	}
 
 	// Dynamic buildings based on player position
 	$: playerX = $gameState.player?.x || 0;
@@ -365,19 +370,46 @@
 
 					<div class="map-details-panel glass-container">
 						{#if selectedTile}
-							{@const tile = miniMapGrid[selectedTile.y]?.[selectedTile.x]}
+							{@const regionId = `${selectedTile.x.toString().padStart(2, '0')}${selectedTile.y.toString().padStart(2, '0')}`}
+							{@const region = $worldStore?.regions?.[regionId]}
 							<div class="tile-info" in:fade>
 								<div class="tile-header">
-									<div class="type-badge" style="background: {tile.color}">{regionNames[tile.type] || tile.type}</div>
-									<h3 class="tile-name">{tile.name}</h3>
+									<div class="type-badge" style="background: {region?.color || '#888'}">{regionNames[region?.type] || region?.type}</div>
+									<h3 class="tile-name">{region?.name}</h3>
 								</div>
-								<p class="tile-desc">{tile.description}</p>
+								<p class="tile-desc">{region?.description}</p>
+								
+								{#if region?.type === 'city' && region.buildings?.ids}
+									<div class="atlas-buildings">
+										<h4 class="atlas-section-title">CITY STRUCTURES</h4>
+										<div class="accordion">
+											{#each region.buildings.ids as bldId}
+												{@const bld = $worldStore.addedStaticData.buildings[bldId]}
+												<div class="accordion-item" class:expanded={expandedBuildingId === bldId}>
+													<button class="accordion-header" on:click={() => toggleBuildingAccordion(bldId)}>
+														<img src={`images/landscape-svgs/${bld.type}.svg`} alt={bld.type} 
+															 on:error={(e) => e.currentTarget.src = 'images/landscape-svgs/custom.svg'} />
+														<span class="bld-name">{bld.name}</span>
+														<span class="chevron">{expandedBuildingId === bldId ? '▼' : '▶'}</span>
+													</button>
+													{#if expandedBuildingId === bldId}
+														<div class="accordion-content" transition:fly={{ y: -10, duration: 200 }}>
+															<p>Provides permanent <strong>{bld.upgradeSystem.stat}</strong> enhancement.</p>
+															<div class="bld-stat-row">
+																<span>Bonus: +{bld.upgradeSystem.value}</span>
+																<span>Base Cost: 50 Gold</span>
+															</div>
+														</div>
+													{/if}
+												</div>
+											{/each}
+										</div>
+									</div>
+								{/if}
+
 								<div class="tile-coords">
 									<span>LAT: {selectedTile.y}</span>
 									<span>LNG: {selectedTile.x}</span>
-								</div>
-								<div class="tile-actions">
-
 								</div>
 							</div>
 						{:else}
@@ -885,6 +917,96 @@
 		font-weight: 800;
 		letter-spacing: 0.15em;
 		max-width: 200px;
+	}
+
+	/* Atlas Buildings Accordion */
+	.atlas-buildings {
+		margin-top: 1.5rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.8rem;
+	}
+
+	.atlas-section-title {
+		font-size: 0.7rem;
+		font-weight: 900;
+		letter-spacing: 0.15em;
+		color: var(--accent-primary);
+		opacity: 0.8;
+		margin: 0;
+	}
+
+	.accordion {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.accordion-item {
+		background: rgba(255, 255, 255, 0.03);
+		border: 1px solid var(--glass-border);
+		border-radius: 12px;
+		overflow: hidden;
+		transition: all 0.3s;
+	}
+
+	.accordion-item.expanded {
+		background: rgba(255, 255, 255, 0.06);
+		border-color: var(--accent-primary);
+	}
+
+	.accordion-header {
+		width: 100%;
+		padding: 12px 15px;
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		background: none;
+		border: none;
+		cursor: pointer;
+		color: #fff;
+		transition: all 0.2s;
+	}
+
+	.accordion-header:hover {
+		background: rgba(255, 255, 255, 0.04);
+	}
+
+	.accordion-header img {
+		width: 24px;
+		height: 24px;
+	}
+
+	.accordion-header .bld-name {
+		flex: 1;
+		text-align: left;
+		font-size: 0.85rem;
+		font-weight: 700;
+	}
+
+	.accordion-header .chevron {
+		font-size: 0.6rem;
+		color: var(--text-dim);
+	}
+
+	.accordion-content {
+		padding: 0 15px 15px 51px;
+		font-size: 0.8rem;
+		color: var(--text-dim);
+		line-height: 1.5;
+	}
+
+	.accordion-content strong {
+		color: var(--accent-primary);
+	}
+
+	.bld-stat-row {
+		margin-top: 8px;
+		display: flex;
+		justify-content: space-between;
+		font-family: monospace;
+		font-weight: 600;
+		color: #fcc419;
 	}
 
 	/* Responsive */
