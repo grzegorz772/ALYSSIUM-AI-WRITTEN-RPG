@@ -133,6 +133,22 @@ export const gameState: Writable<{
 	generatingWorld: boolean;
 	answer: string;
 	dotty: string;
+	player: {
+		gold: number;
+		x: number;
+		y: number;
+		stats: {
+			hp: number;
+			maxHp: number;
+			mp: number;
+			maxMp: number;
+			strength: number;
+			agility: number;
+			intelligence: number;
+			defense: number;
+		};
+		inventory: (any | null)[];
+	};
 }> = writable({
 	chatMessages: [],
 	chatHistory: [],  // <-- DODAJ
@@ -145,5 +161,21 @@ export const gameState: Writable<{
 	mapGrid: [],
 	generatingWorld: false,
 	answer: '',
-	dotty: '.'
+	dotty: '.',
+	player: {
+		gold: 100,
+		x: 0,
+		y: 0,
+		stats: {
+			hp: 100,
+			maxHp: 100,
+			mp: 50,
+			maxMp: 50,
+			strength: 10,
+			agility: 10,
+			intelligence: 10,
+			defense: 5
+		},
+		inventory: Array(6).fill(null)
+	}
 });

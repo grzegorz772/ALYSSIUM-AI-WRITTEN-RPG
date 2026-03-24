@@ -1,17 +1,52 @@
 <script lang="ts">
 	import Game from '$lib/components/Game.svelte'
-	import { game, character, misc, ui } from '../stores'
+	import { game, character, misc, ui, gameState } from '../stores'
 	import { onMount } from 'svelte'
 	import { fade, fly, scale } from 'svelte/transition'
-	import { cubicOut } from 'svelte/easing'
+	import { cubicOut, backOut } from 'svelte/easing'
 	import { supabase } from '$lib/supabaseClient'
-	import { regionNames } from '$lib/components/utils/MapGenerator';
+	import { regionNames, worldStore } from '$lib/components/utils/MapGenerator';
 	
 	let gameComponent: any;
 	let miniMapGrid: any[] = [];
 	let isPanelOpen = false;
 	let mapOn = false;
+	let inventoryOn = false;
 	let selectedTile: any = null;
+
+	// Dynamic buildings based on player position
+	$: playerX = $gameState.player?.x || 0;
+	$: playerY = $gameState.player?.y || 0;
+	$: currentRegionId = `${playerX.toString().padStart(2, '0')}${playerY.toString().padStart(2, '0')}`;
+	$: currentRegion = $worldStore?.regions?.[currentRegionId];
+	$: currentBuildings = (currentRegion?.type === 'city' && currentRegion.buildings?.ids)
+		? currentRegion.buildings.ids.map((id: string) => $worldStore.addedStaticData.buildings[id])
+		: [];
+
+	function upgradeStat(building: any) {
+		if (!$gameState.player) return;
+		const cost = 50; // Base cost for now
+		if ($gameState.player.gold >= cost) {
+			$gameState.player.gold -= cost;
+			const { stat, value } = building.upgradeSystem;
+			($gameState.player.stats as any)[stat] += value;
+			$ui.toastMsg = `Upgraded ${stat} at ${building.name}!`;
+			setTimeout(() => $ui.toastMsg = '', 3000);
+		} else {
+			$ui.errorWarnMsg = "Not enough gold!";
+			setTimeout(() => $ui.errorWarnMsg = '', 3000);
+		}
+	}
+
+	function toggleInventory() {
+		inventoryOn = !inventoryOn;
+		if (inventoryOn) mapOn = false;
+	}
+
+	function toggleBuildings() {
+		mapOn = !mapOn;
+		if (mapOn) inventoryOn = false;
+	}
 
 	// Audio logic
 	let audioElement: any
@@ -151,38 +186,45 @@
 		<!-- LIQUID GLASS SLIDE PANEL -->
 		<div class="slide-panel" class:open={isPanelOpen}>
 			<div class="panel-content glass-container">
-				<!-- Buildings Menu (Floating above button) -->
+				<!-- Buildings Menu -->
 				{#if mapOn}
 					<div class="places-to-go-wrapper" transition:fly={{ y: 20, duration: 300 }}>
 						<div class="places-to-go glass-container">
-							<button disabled={$misc.loading || $game.gameData.event.inCombat} on:click={() => handleAnswer("I'll go to nearest Tavern to rest.")}>
-								<img src="images/landscape-svgs/tavern.svg" alt="tavern" />
-								<span>Tavern</span>
-							</button>
-							<button disabled={$misc.loading || $game.gameData.event.inCombat} on:click={() => handleAnswer("I'll go to nearest Town.")}>
-								<img src="images/landscape-svgs/town.svg" alt="town" />
-								<span>Town</span>
-							</button>
-							<button disabled={$misc.loading || $game.gameData.event.inCombat} on:click={() => handleAnswer("I'll go to nearest Woods.")}>
-								<img src="images/landscape-svgs/forest.svg" alt="woods" />
-								<span>Woods</span>
-							</button>
-							<button disabled={$misc.loading || $game.gameData.event.inCombat} on:click={() => handleAnswer("I'll go to nearest Harbor.")}>
-								<img src="images/landscape-svgs/dock.svg" alt="harbor" />
-								<span>Harbor</span>
-							</button>
-							<button disabled={$misc.loading || $game.gameData.event.inCombat} on:click={() => handleAnswer("I'll go to weaponsmith.")}>
-								<img src="images/landscape-svgs/shop1.svg" alt="weaponsmith" />
-								<span>Weaponsmith</span>
-							</button>
-							<button disabled={$misc.loading || $game.gameData.event.inCombat} on:click={() => handleAnswer("I'll go to spell shop.")}>
-								<img src="images/landscape-svgs/shop2.svg" alt="spell shop" />
-								<span>Spell Shop</span>
-							</button>
-							<button disabled={$misc.loading || $game.gameData.event.inCombat} on:click={() => handleAnswer("I'll go to potion shop.")}>
-								<img src="images/landscape-svgs/shop3.svg" alt="potion shop" />
-								<span>Potion Shop</span>
-							</button>
+							{#if currentBuildings.length > 0}
+								{#each currentBuildings as building}
+									<button disabled={$misc.loading || $game.gameData.event.inCombat} on:click={() => upgradeStat(building)}>
+										<img src={`images/landscape-svgs/${building.type}.svg`} alt={building.type} 
+											 on:error={(e) => e.currentTarget.src = 'images/landscape-svgs/custom.svg'} />
+										<div class="bld-info">
+											<span class="bld-name">{building.name}</span>
+											<span class="bld-stat">{building.upgradeSystem.stat} +{building.upgradeSystem.value}</span>
+										</div>
+									</button>
+								{/each}
+							{:else}
+								<div class="no-buildings">
+									<p>WILDERNESS</p>
+									<span>No structures in this territory</span>
+								</div>
+							{/if}
+						</div>
+					</div>
+				{/if}
+
+				<!-- Inventory Menu -->
+				{#if inventoryOn}
+					<div class="inventory-wrapper" transition:fly={{ y: 20, duration: 300 }}>
+						<div class="inventory-grid glass-container">
+							{#each $gameState.player?.inventory || Array(6).fill(null) as item, i}
+								<div class="inventory-slot" transition:scale={{delay: i * 50, duration: 300, easing: backOut}}>
+									{#if item}
+										<img src={item.image || 'images/item.svg'} alt={item.name} />
+									{:else}
+										<div class="empty-slot"></div>
+									{/if}
+									<div class="slot-bg"></div>
+								</div>
+							{/each}
 						</div>
 					</div>
 				{/if}
@@ -190,7 +232,7 @@
 				<div class="panel-layout">
 					<!-- LEFT: BUILDINGS & MUSIC -->
 					<div class="panel-section utils-section-left">
-						<button class="action-btn glass-btn" on:click={() => mapOn = !mapOn} class:active={mapOn}>
+						<button class="action-btn glass-btn" on:click={toggleBuildings} class:active={mapOn}>
 							<img src="images/map.svg" alt="bld" />
 							<span>BUILDINGS</span>
 						</button>
@@ -204,7 +246,7 @@
 					<div class="panel-section stats-section">
 						<div class="stat-item gold">
 							<img src="images/gold.svg" alt="gold" class="stat-icon" />
-							<span class="stat-value">{$character.gold}</span>
+							<span class="stat-value">{$gameState.player?.gold || 0}</span>
 						</div>
 						<div class="stat-item time">
 							<img src="images/time.svg" alt="time" class="stat-icon" />
@@ -215,7 +257,7 @@
 					<!-- MIDDLE: EQUIPMENT -->
 					<div class="panel-section actions-section">
 						<div class="action-buttons">
-							<button class="action-btn glass-btn main-action" on:click={() => console.log('Inventory')}>
+							<button class="action-btn glass-btn main-action" on:click={toggleInventory} class:active={inventoryOn}>
 								<img src="images/item.svg" alt="inv" />
 								<span>EQUIPMENT</span>
 							</button>
@@ -807,16 +849,118 @@
 		.places-to-go-wrapper { left: 20px; }
 	}
 
-	@media (max-width: 600px) {
-		.panel-layout {
-			grid-template-columns: 1fr 1fr;
-			gap: 15px;
-		}
-		.actions-section { grid-column: 1 / span 2; grid-row: 1; }
-		.stats-section { grid-column: 1; grid-row: 2; }
-		.map-section { grid-column: 2; grid-row: 2; }
-		.utils-section-left { grid-column: 1; grid-row: 3; }
-		.utils-section-right { grid-column: 2; grid-row: 3; }
-		.panel-content { padding: 20px 20px 70px 20px; }
+	.places-to-go-wrapper, .inventory-wrapper {
+		position: absolute;
+		bottom: 100%;
+		left: 40px;
+		right: 40px;
+		margin-bottom: 20px;
+		z-index: 210;
 	}
-	</style>
+
+	.places-to-go, .inventory-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 15px;
+		padding: 20px;
+		background: var(--glass-bg);
+		backdrop-filter: blur(30px);
+		border: 1px solid var(--glass-border);
+		border-radius: 24px;
+		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+	}
+
+	.places-to-go button {
+		background: rgba(255, 255, 255, 0.03);
+		border: 1px solid var(--glass-border);
+		border-radius: 16px;
+		padding: 15px;
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		cursor: pointer;
+		transition: all 0.3s;
+		text-align: left;
+	}
+
+	.places-to-go button:hover {
+		background: rgba(0, 242, 255, 0.1);
+		border-color: var(--accent-primary);
+		transform: translateY(-2px);
+	}
+
+	.places-to-go button img {
+		width: 32px;
+		height: 32px;
+	}
+
+	.bld-info {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.bld-name {
+		font-size: 0.85rem;
+		font-weight: 800;
+		color: #fff;
+	}
+
+	.bld-stat {
+		font-size: 0.7rem;
+		color: var(--accent-primary);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
+	.no-buildings {
+		grid-column: 1 / span 3;
+		text-align: center;
+		padding: 30px;
+		color: var(--text-dim);
+	}
+
+	.no-buildings p {
+		font-weight: 900;
+		letter-spacing: 0.2em;
+		margin-bottom: 5px;
+	}
+
+	/* Inventory */
+	.inventory-grid {
+		grid-template-columns: repeat(3, 1fr);
+		max-width: 400px;
+		margin: 0 auto;
+	}
+
+	.inventory-slot {
+		aspect-ratio: 1;
+		background: rgba(0, 0, 0, 0.3);
+		border: 1px solid var(--glass-border);
+		border-radius: 12px;
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		overflow: hidden;
+	}
+
+	.inventory-slot img {
+		width: 70%;
+		height: 70%;
+		object-fit: contain;
+		z-index: 2;
+	}
+
+	.empty-slot {
+		width: 100%;
+		height: 100%;
+		background: radial-gradient(circle at center, rgba(255,255,255,0.03) 0%, transparent 70%);
+	}
+
+	.slot-bg {
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(45deg, transparent, rgba(255,255,255,0.02));
+		z-index: 1;
+	}
+</style>

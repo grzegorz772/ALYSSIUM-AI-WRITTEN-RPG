@@ -1,4 +1,10 @@
 // src/lib/components/utils/MapGenerator.ts
+import { writable, type Writable } from 'svelte/store';
+
+// ============================================
+// STORES
+// ============================================
+export const worldStore: Writable<any> = writable(null);
 
 export const MAP_SIZE = 20;
 
@@ -11,11 +17,8 @@ const regionTemplates = {
 		name: "LLM Generate",
 		description: "LLM Generate Max 3 sentences",
 		buildings: {
-			amount: 4,
-			id1: "RND",
-			id2: "RND",
-			id3: "RND",
-			id4: "RND"
+			amount: 3,
+			ids: []
 		}
 	},
 	"002": {
@@ -428,16 +431,6 @@ export function generateMap(): any[] {
 	});
 
 	console.log('🌍 FULL WORLD JSON:', JSON.stringify(fullWorldData, null, 2));
-	console.log('📊 STATS:', {
-		totalRegions: Object.keys(fullWorldRegions).length,
-		cities: Object.values(fullWorldRegions).filter((r: any) => r.type === "city").length,
-		mountains: Object.values(fullWorldRegions).filter((r: any) => r.type === "mountain").length,
-		plains: Object.values(fullWorldRegions).filter((r: any) => r.type === "plains").length,
-		water: Object.values(fullWorldRegions).filter((r: any) => r.type === "water").length,
-		desert: Object.values(fullWorldRegions).filter((r: any) => r.type === "desert").length,
-		forest: Object.values(fullWorldRegions).filter((r: any) => r.type === "forest").length
-	});
-
 	return mapGrid;
 }
 
@@ -471,28 +464,25 @@ export function setSeed(seed: number): void {
 // ============================================
 
 export function findStartingLocation(): { x: number, y: number, regionId: string } {
-	const cities: { x: number, y: number, regionId: string, dist: number }[] = [];
+	const cities: { x: number, y: number, regionId: string }[] = [];
 	
 	for (let y = 0; y < MAP_SIZE; y++) {
 		for (let x = 0; x < MAP_SIZE; x++) {
 			const tile = mapGrid[y]?.[x];
 			if (tile && tile.regionId === "001") {
-				const dist = Math.sqrt((x - MAP_SIZE/2) ** 2 + (y - MAP_SIZE/2) ** 2);
 				const regionId = `${x.toString().padStart(2, '0')}${y.toString().padStart(2, '0')}`;
-				cities.push({ x, y, regionId, dist });
+				cities.push({ x, y, regionId });
 			}
 		}
 	}
-	
-	cities.sort((a, b) => a.dist - b.dist);
 	
 	if (cities.length === 0) {
 		const center = Math.floor(MAP_SIZE/2);
 		return { x: center, y: center, regionId: `${center.toString().padStart(2, '0')}${center.toString().padStart(2, '0')}` };
 	}
 	
-	const start = cities[0];
-	console.log('📍 Starting location:', start);
+	const start = cities[Math.floor(Math.random() * cities.length)];
+	console.log('📍 Random starting location (City):', start);
 	return start;
 }
 
@@ -513,100 +503,149 @@ export function getRegionsInRadius(centerX: number, centerY: number, radius: num
 	return regionIds;
 }
 
-// In MapGenerator.ts, replace the enhanceRegionsWithAI function:
-	export async function enhanceRegionsWithAI(regionIds: string[]): Promise<Record<string, any>> {
-		const startTime = performance.now();
-		console.log('🤖 Enhancing regions with AI:', regionIds.length);
-		
-		if (!fullWorldData) {
-			console.error('No world data generated yet');
-			return {};
-		}
-		
-		const regionsToEnhance: Record<string, any> = {};
-		for (const id of regionIds) {
-			if (fullWorldData.regions[id]) {
-				regionsToEnhance[id] = {
-					type: fullWorldData.regions[id].type,
-					x: fullWorldData.regions[id].x,
-					y: fullWorldData.regions[id].y
-				};
-			}
-		}
-		
-		const promptForAI = JSON.stringify(regionsToEnhance, null, 2);
-		
-		try {
-			const response = await fetch('/api/enhance-regions', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ 
-					prompt: promptForAI, 
-					type: 'region_enhancement'  // This is required by your endpoint
-				})
-			});
-			
-			if (!response.ok) {
-				const errorData = await response.json();
-				throw new Error(`AI enhancement failed: ${response.status} - ${errorData.error || 'Unknown error'}`);
-			}
-			
-			const data = await response.json();
-			const enhanced = data.regionData || {};
-			
-			const endTime = performance.now();
-			console.log(`✅ Enhanced ${Object.keys(enhanced).length} regions in ${((endTime - startTime) / 1000).toFixed(2)}s`);
-			
-			return enhanced;
-			
-		} catch (error) {
-			console.error('❌ Region enhancement failed:', error);
-			return {};
+export async function enhanceRegionsWithAI(regionIds: string[]): Promise<Record<string, any>> {
+	const startTime = performance.now();
+	console.log('🤖 Enhancing regions with AI:', regionIds.length);
+	
+	if (!fullWorldData) {
+		console.error('No world data generated yet');
+		return {};
+	}
+	
+	const regionsToEnhance: Record<string, any> = {};
+	for (const id of regionIds) {
+		if (fullWorldData.regions[id]) {
+			regionsToEnhance[id] = {
+				type: fullWorldData.regions[id].type,
+				x: fullWorldData.regions[id].x,
+				y: fullWorldData.regions[id].y
+			};
 		}
 	}
+	
+	const promptForAI = JSON.stringify(regionsToEnhance, null, 2);
+	
+	try {
+		const response = await fetch('/api/enhance-regions', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ 
+				prompt: promptForAI, 
+				type: 'region_enhancement'
+			})
+		});
+		
+		if (!response.ok) {
+			const errorData = await response.json();
+			throw new Error(`AI enhancement failed: ${response.status} - ${errorData.error || 'Unknown error'}`);
+		}
+		
+		const data = await response.json();
+		const enhanced = data.regionData || {};
+		
+		const endTime = performance.now();
+		console.log(`✅ Enhanced ${Object.keys(enhanced).length} regions in ${((endTime - startTime) / 1000).toFixed(2)}s`);
+		
+		return enhanced;
+		
+	} catch (error) {
+		console.error('❌ Region enhancement failed:', error);
+		return {};
+	}
+}
+
 // ============================================
 // GENEROWANIE PEŁNEGO ŚWIATA Z DANYMI STATYCZNYMI
 // ============================================
 
-// Placeholdery dla danych statycznych (do wypełnienia później)
 const staticDataTemplates = {
   buildings: {
-    "001": { type: "forge", name: "LLM Anvil", upgradeSystem: { targetType: "physical", maxLevel: 10, costMultiplier: 1.5, successRate: [1.0, 0.9, 0.8, 0.5] } },
-    "002": { type: "magicForge", name: "LLM", upgradeSystem: { targetType: "magical", maxLevel: 10, costMultiplier: 1.5, successRate: [1.0, 0.9, 0.8, 0.5] } },
-    "003": { type: "alchemistLab", name: "LLM", effects: { amount: 4, id: "RND" } },
-    "004": { type: "jewelryWorkshop", name: "LLM Gems", category: "jewelry", inventory: [{ amount: 4, items: { id1: "RND", id2: "RND", id3: "RND", id4: "RND" } }] },
-    "005": { type: "tavern", name: "LLM Rest", sleepSystem: { cost: 10, recoveryRate: 1.0, buff: "wellRested", duration: 480 } },
-    "006": { type: "library", name: "LLM Archives", training: { statTarget: "intelligence", gainAmount: 1, requiredTime: 3600, cost: 50 } },
-    "007": { type: "townHall", name: "LLM Quest Building", questBoard: { amount: 4, id1: "RND", id2: "RND", id3: "RND", id4: "RND" } }
+    "forge": { 
+        type: "forge", 
+        name: "Grand Forge", 
+        upgradeSystem: { 
+            stat: "strength", 
+            targetType: "physical", 
+            maxLevel: 10, 
+            costMultiplier: 1.5, 
+            value: 5 
+        } 
+    },
+    "magicTower": { 
+        type: "magicTower", 
+        name: "Arcane Observatory", 
+        upgradeSystem: { 
+            stat: "intelligence", 
+            targetType: "magical", 
+            maxLevel: 10, 
+            costMultiplier: 1.5, 
+            value: 5 
+        } 
+    },
+    "trainingGrounds": { 
+        type: "trainingGrounds", 
+        name: "Warrior's Court", 
+        upgradeSystem: { 
+            stat: "agility", 
+            targetType: "physical", 
+            maxLevel: 10, 
+            costMultiplier: 1.5, 
+            value: 5 
+        } 
+    },
+    "armory": { 
+        type: "armory", 
+        name: "Royal Armory", 
+        upgradeSystem: { 
+            stat: "defense", 
+            targetType: "physical", 
+            maxLevel: 10, 
+            costMultiplier: 1.5, 
+            value: 5 
+        } 
+    },
+    "alchemistShop": { 
+        type: "alchemistShop", 
+        name: "Venom & Tonic", 
+        upgradeSystem: { 
+            stat: "maxMp", 
+            targetType: "magical", 
+            maxLevel: 10, 
+            costMultiplier: 1.5, 
+            value: 20 
+        } 
+    },
+    "cathedral": { 
+        type: "cathedral", 
+        name: "Temple of Light", 
+        upgradeSystem: { 
+            stat: "maxHp", 
+            targetType: "magical", 
+            maxLevel: 10, 
+            costMultiplier: 1.5, 
+            value: 20 
+        } 
+    }
   },
   enemies: {
     "001": {
       name: "LLM NAME",
       description: "LLM DESCRIPTION",
       statistics: {
-        magicArmor: "RND%", armorArmor: "RND%", magicPenetration: "RND%",
-        armorPenetration: "RND%", magicDamage: "RND", physicalDamage: "RND",
+        magicArmor: "10%", armorArmor: "10%", magicPenetration: "5%",
+        armorPenetration: "5%", magicDamage: "10", physicalDamage: "10",
         imagePath: "./images/enemies/exampleEnemy.png"
       },
-      abilities: { "001": { name: "LLM NAME", description: "LLM DESCRIPTION", id: "001", type: "magic_damage", value: "RND" } }
+      abilities: { "001": { name: "Strike", description: "Basic attack", id: "001", type: "physical", value: 10 } }
     }
-  },
-  items: {},
-  abilities: {},
-  NPCs: {},
-  quests: {}
+  }
 };
 
-// Funkcja do generowania pełnego świata z danymi statycznymi
 export function buildFullWorldWithStaticData(): any {
-  if (!fullWorldData) {
-    console.warn('No world data generated yet');
-    return null;
-  }
+  if (!fullWorldData) return null;
 
-  // Kopiujemy istniejące regiony
   const worldWithStatic = {
-    regions: { ...fullWorldData.regions },
+    ...fullWorldData,
     addedStaticData: {
       buildings: {},
       enemies: {},
@@ -614,33 +653,20 @@ export function buildFullWorldWithStaticData(): any {
       abilities: {},
       NPCs: {},
       quests: {}
-    },
-    seed: fullWorldData.seed,
-    worldName: fullWorldData.worldName,
-    generatedAt: fullWorldData.generatedAt,
-    mapSize: fullWorldData.mapSize,
-    mapGrid: fullWorldData.mapGrid
+    }
   };
 
-  // Dla miast generujemy budynki
   for (const [regionId, region] of Object.entries(worldWithStatic.regions) as [string, any][]) {
     if (region.type === 'city') {
-      // Losujemy 4 unikalne budynki dla miasta
       const buildingKeys = Object.keys(staticDataTemplates.buildings);
-      const shuffled = [...buildingKeys];
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
-      const selectedBuildings = shuffled.slice(0, 4);
+      const shuffled = [...buildingKeys].sort(() => Math.random() - 0.5);
+      const selectedBuildings = shuffled.slice(0, 3);
       
-      // Tworzymy mapę budynków dla tego miasta
       region.buildings = {
-        amount: 4,
+        amount: 3,
         ids: selectedBuildings
       };
       
-      // Dodajemy budynki do globalnej kolekcji
       for (const buildingId of selectedBuildings) {
         if (!worldWithStatic.addedStaticData.buildings[buildingId]) {
           worldWithStatic.addedStaticData.buildings[buildingId] = {
@@ -651,56 +677,45 @@ export function buildFullWorldWithStaticData(): any {
       }
     }
     
-    // Dla regionów z wrogami
     if (region.enemy?.isEnemy === true) {
-      // Generujemy unikalnego wroga
       const enemyId = `${regionId}_enemy`;
       worldWithStatic.addedStaticData.enemies[enemyId] = {
         ...staticDataTemplates.enemies["001"],
         id: enemyId,
-        name: `Guardian of ${region.name}`,
-        description: `A fearsome creature that protects the ${region.name}.`
+        name: `Guardian of ${region.name}`
       };
       region.enemy.id = enemyId;
     }
   }
 
-  console.log('🌍 FULL WORLD WITH STATIC DATA GENERATED');
-  console.log(`📊 Buildings: ${Object.keys(worldWithStatic.addedStaticData.buildings).length}`);
-  console.log(`📊 Enemies: ${Object.keys(worldWithStatic.addedStaticData.enemies).length}`);
-
   return worldWithStatic;
 }
 
-// Funkcja do zapisu świata do pliku JSON (tylko do debugowania)
-export function saveWorldToJSON(): void {
-  const fullWorld = buildFullWorldWithStaticData();
-  if (!fullWorld) return;
-  
-  const jsonString = JSON.stringify(fullWorld, null, 2);
-  const blob = new Blob([jsonString], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `world_${fullWorld.seed}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  console.log('💾 World saved to file');
+let globalWorldJSON: any = null;
+
+function updateGlobalWorldJSON() {
+	if (!fullWorldData) return;
+	globalWorldJSON = buildFullWorldWithStaticData();
+	worldStore.set(globalWorldJSON);
+	
+	if (typeof window !== 'undefined') {
+		(window as any).WORLD_JSON = globalWorldJSON;
+	}
 }
 
-// Eksportuj dodatkowe funkcje
-export function getFullWorldWithStaticData(): any {
-  return buildFullWorldWithStaticData();
+export function getGlobalWorldJSON(): any {
+	return globalWorldJSON;
 }
+
+export function setFullWorldData(data: any) {
+	fullWorldData = data;
+	updateGlobalWorldJSON();
+}
+
 export function updateWorldWithEnhancedRegions(enhancedRegions: Record<string, any>) {
-	let updatedCount = 0;
-	
 	for (const [id, data] of Object.entries(enhancedRegions)) {
 		if (fullWorldData.regions[id]) {
-			if (data.name) {
-				fullWorldData.regions[id].name = data.name;
-				updatedCount++;
-			}
+			if (data.name) fullWorldData.regions[id].name = data.name;
 			if (data.description) fullWorldData.regions[id].description = data.description;
 			
 			const x = fullWorldData.regions[id].x;
@@ -711,34 +726,17 @@ export function updateWorldWithEnhancedRegions(enhancedRegions: Record<string, a
 			}
 		}
 	}
-	
-	console.log(`📦 Updated ${updatedCount} regions with AI names`);
-	
-	// Aktualizuj globalny JSON po każdej zmianie
-	if (fullWorldData) {
-		updateGlobalWorldJSON();
-	}
+	updateGlobalWorldJSON();
 }
 
 export function markRegionAsGenerated(regionId: string) {
 	generatedRegionsSet.add(regionId);
 }
 
-export function isRegionGenerated(regionId: string): boolean {
-	return generatedRegionsSet.has(regionId);
-}
-
-export function getWorldProgress(): { total: number, generated: number, percentage: number } {
-	if (!fullWorldData) return { total: 0, generated: 0, percentage: 0 };
-	const total = Object.keys(fullWorldData.regions).length;
-	return { total, generated: generatedRegionsSet.size, percentage: (generatedRegionsSet.size / total) * 100 };
-}
-
 export function initRegionBatch() {
 	if (!fullWorldData) return;
 	allRegionIds = Object.keys(fullWorldData.regions);
 	currentBatchIndex = 0;
-	console.log(`📦 Total regions to process: ${allRegionIds.length}, batches: ${Math.ceil(allRegionIds.length / BATCH_SIZE)}`);
 }
 
 export function getNextBatch(): string[] {
@@ -749,19 +747,11 @@ export function getNextBatch(): string[] {
 }
 
 export async function generateAllRegionsWithAI(): Promise<void> {
-	if (isGeneratingBatch) {
-		console.log('⏳ Batch generation already in progress');
-		return;
-	}
-	
+	if (isGeneratingBatch) return;
 	isGeneratingBatch = true;
-	const startTime = performance.now();
-	
-	console.log('🚀 Starting batch region generation...');
 	
 	const startLoc = findStartingLocation();
 	const priorityRegions = getRegionsInRadius(startLoc.x, startLoc.y, 2);
-	console.log('📍 Priority regions (player start):', priorityRegions.length);
 	
 	const priorityEnhanced = await enhanceRegionsWithAI(priorityRegions);
 	updateWorldWithEnhancedRegions(priorityEnhanced);
@@ -772,161 +762,15 @@ export async function generateAllRegionsWithAI(): Promise<void> {
 	
 	initRegionBatch();
 	allRegionIds = allRegionIds.filter(id => !priorityRegions.includes(id));
-	currentBatchIndex = 0;
-	
-	let batchNumber = 1;
-	let totalEnhanced = priorityRegions.length;
 	
 	while (true) {
 		const batch = getNextBatch();
 		if (batch.length === 0) break;
-		
-		console.log(`📦 Generating batch ${batchNumber} (${batch.length} regions)...`);
-		
 		const enhanced = await enhanceRegionsWithAI(batch);
 		updateWorldWithEnhancedRegions(enhanced);
-		
-		for (const id of batch) {
-			markRegionAsGenerated(id);
-		}
-		
-		totalEnhanced += batch.length;
-		batchNumber++;
-		
-		if (batch.length === BATCH_SIZE) {
-			console.log('⏱️ Waiting 2 seconds before next batch...');
-			await new Promise(resolve => setTimeout(resolve, 2000));
-		}
+		for (const id of batch) markRegionAsGenerated(id);
+		if (batch.length === BATCH_SIZE) await new Promise(r => setTimeout(r, 1000));
 	}
-	
-	const endTime = performance.now();
-	const duration = ((endTime - startTime) / 1000).toFixed(2);
-	
-	console.log('🎉 ALL REGIONS GENERATED!');
-	console.log(`📊 Total enhanced: ${totalEnhanced}/${allRegionIds.length + priorityRegions.length}`);
-	console.log(`⏱️ Total time: ${duration} seconds`);
 	
 	isGeneratingBatch = false;
-}
-// ============================================
-// GLOBALNA ZMIENNA DO LOGOWANIA CAŁEGO ŚWIATA
-// ============================================
-
-// To jest TWOJA GŁÓWNA ZMIENNA - pokazuje cały świat w formacie exampleWorld
-let globalWorldJSON: any = null;
-
-// Funkcja do aktualizacji globalnego JSONa
-function updateGlobalWorldJSON() {
-	if (!fullWorldData) return;
-	
-	// Budujemy pełny świat w formacie exampleWorld
-	globalWorldJSON = {
-		regions: fullWorldData.regions,
-		addedStaticData: {
-			buildings: {},
-			enemies: {},
-			items: {},
-			abilities: {},
-			NPCs: {},
-			quests: {}
-		},
-		seed: fullWorldData.seed,
-		worldName: fullWorldData.worldName,
-		generatedAt: fullWorldData.generatedAt,
-		mapSize: fullWorldData.mapSize
-	};
-	
-	// Dodajemy statyczne dane jeśli istnieją
-	if ((fullWorldData as any).addedStaticData) {
-		globalWorldJSON.addedStaticData = (fullWorldData as any).addedStaticData;
-	}
-	
-	// LOGUJEMY CAŁY JSON CO KAŻDĄ AKTUALIZACJĘ
-	console.log('\n' + '='.repeat(80));
-	console.log('🌍 COMPLETE WORLD JSON (GLOBAL VARIABLE) 🌍');
-	console.log('='.repeat(80));
-	console.log(JSON.stringify(globalWorldJSON, null, 2));
-	console.log('='.repeat(80));
-	console.log(`📊 Total regions: ${Object.keys(globalWorldJSON.regions).length}`);
-	console.log(`🎲 Seed: ${globalWorldJSON.seed}`);
-	console.log(`📅 Updated: ${new Date().toISOString()}`);
-	console.log('='.repeat(80) + '\n');
-}
-
-// Eksportujemy funkcję do ręcznego sprawdzenia globalnego JSONa
-export function getGlobalWorldJSON(): any {
-	if (!globalWorldJSON) {
-		console.log('⚠️ World not generated yet. Call updateGlobalWorldJSON() first.');
-		return null;
-	}
-	console.log('🌍 Current world JSON:', globalWorldJSON);
-	return globalWorldJSON;
-}
-
-// Automatycznie aktualizuj globalny JSON przy każdej zmianie świata
-export function setFullWorldData(data: any) {
-	fullWorldData = data;
-	updateGlobalWorldJSON();
-	
-	// Dodaj globalną zmienną do window dla łatwego dostępu w konsoli
-	if (typeof window !== 'undefined') {
-		(window as any).WORLD_JSON = globalWorldJSON;
-		(window as any).getWorldJSON = () => {
-			console.log('🌍 WORLD_JSON:', (window as any).WORLD_JSON);
-			return (window as any).WORLD_JSON;
-		};
-		console.log('💡 Tip: Type "WORLD_JSON" in console to see full world data');
-		console.log('💡 Tip: Type "getWorldJSON()" to get world data');
-	}
-}
-
-// Nadpisz funkcję updateWorldWithEnhancedRegions aby aktualizowała globalny JSON
-if (typeof window !== 'undefined') {
-	const originalUpdateWorldWithEnhancedRegions = updateWorldWithEnhancedRegions;
-	(window as any).updateWorldWithEnhancedRegions = function(enhancedRegions: Record<string, any>) {
-		originalUpdateWorldWithEnhancedRegions(enhancedRegions);
-		updateGlobalWorldJSON();
-	};
-}
-// ============================================
-// AUTO-LOGOWANIE CO 5 SEKUND (OPCJONALNE)
-// ============================================
-
-let autoLogInterval: NodeJS.Timeout | null = null;
-
-export function startAutoLogging(intervalMs: number = 5000) {
-	if (autoLogInterval) clearInterval(autoLogInterval);
-	
-	autoLogInterval = setInterval(() => {
-		if (globalWorldJSON) {
-			console.log('\n' + '🔄'.repeat(40));
-			console.log('📡 AUTO-LOG: COMPLETE WORLD STATE');
-			console.log('🔄'.repeat(40));
-			console.log(JSON.stringify(globalWorldJSON, null, 2));
-			console.log('🔄'.repeat(40) + '\n');
-		}
-	}, intervalMs);
-	
-	console.log(`✅ Auto-logging started (every ${intervalMs/1000}s)`);
-}
-
-export function stopAutoLogging() {
-	if (autoLogInterval) {
-		clearInterval(autoLogInterval);
-		autoLogInterval = null;
-		console.log('🛑 Auto-logging stopped');
-	}
-}
-
-// Automatycznie uruchom logowanie gdy świat jest gotowy
-if (typeof window !== 'undefined') {
-	(window as any).startWorldLogging = startAutoLogging;
-	(window as any).stopWorldLogging = stopAutoLogging;
-	(window as any).showWorld = () => {
-		if (globalWorldJSON) {
-			console.log(JSON.stringify(globalWorldJSON, null, 2));
-		} else {
-			console.log('World not ready yet');
-		}
-	};
 }

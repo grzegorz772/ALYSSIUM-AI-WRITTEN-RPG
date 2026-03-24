@@ -152,7 +152,8 @@ onMount(() => {
 					prompt,
 					language,
 					languageLevel,
-					chatHistory: $gameState.chatHistory  // Wyślij historię do API
+					chatHistory: $gameState.chatHistory,
+					player: $gameState.player
 				}),
 				signal: controller.signal
 			})
@@ -501,14 +502,18 @@ onMount(() => {
 		$gameState.worldPrompt = answer;
 
 		const heroClass = $game.gameData.heroClass;
+		let stats = { hp: 100, maxHp: 100, mp: 50, maxMp: 50, strength: 10, agility: 10, intelligence: 10, defense: 5 };
+		
 		if (heroClass === 'mage') {
 			$character.stats = [CHARACTER_CLASSES.MAGE.stats];
 			$character.spells = [...medievalMageSpells];
 			$character.inventory = [...medievalMageInventory];
+			stats = { ...stats, ...CHARACTER_CLASSES.MAGE.stats, intelligence: 20, mp: 100, maxMp: 100 };
 		} else if (heroClass === 'warrior') {
 			$character.stats = [CHARACTER_CLASSES.WARRIOR.stats];
 			$character.spells = [...medievalWarriorSpells];
 			$character.inventory = [...medievalWarriorInventory];
+			stats = { ...stats, ...CHARACTER_CLASSES.WARRIOR.stats, strength: 20, defense: 15 };
 		}
 		
 		if (!$gameState.mapGenerated) {
@@ -517,6 +522,16 @@ onMount(() => {
 			// Wygeneruj mapę proceduralnie (najpierw szara)
 			$gameState.mapGrid = generateMap();
 			console.log('✅ Base map generated');
+
+			// Find starting location (City)
+			const startLoc = findStartingLocation();
+			$gameState.player = {
+				gold: STARTING_VALUES.GOLD,
+				x: startLoc.x,
+				y: startLoc.y,
+				stats: stats,
+				inventory: Array(6).fill(null)
+			};
 
 			// 1. Najpierw pobierz motyw wizualny (kolory i nazwy typów)
 			enhanceWorldTheme(answer).then(success => {
@@ -539,6 +554,10 @@ onMount(() => {
 				});
 			
 			$gameState.mapGenerated = true;
+		} else {
+			const startLoc = findStartingLocation();
+			$gameState.player.x = startLoc.x;
+			$gameState.player.y = startLoc.y;
 		}
 		
 		giveAnswer(answer);
@@ -552,12 +571,6 @@ onMount(() => {
 		fetchImg()
 	}
 
-	$: if (
-		$game.gameData.event?.shopMode &&
-		(!$game.gameData.shop || $game.gameData.shop.length !== SHOP_CONFIG.ITEMS_PER_SHOP)
-	) {
-		mixBuyables($game.gameData.event.shopMode)
-	}
 </script>
 
 <div class="game-interface-root">
