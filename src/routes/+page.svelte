@@ -94,22 +94,58 @@
 	}
 
 	function handleAnswer(answer: string) {
-		if (gameComponent && gameComponent.giveAnswer) {
-			// CHECK FOR ENEMY ENCOUNTER
-			const playerX = $gameState.player?.x || 0;
-			const playerY = $gameState.player?.y || 0;
-			const regionId = `${playerX.toString().padStart(2, '0')}${playerY.toString().padStart(2, '0')}`;
-			const region = $worldStore?.regions?.[regionId];
+		if (gameComponent && (gameComponent.giveAnswer || gameComponent.forceCombatState)) {
+			// SPRAWDŹ CZY WALKA JEST JUŻ AKTYWNA
+			const isAlreadyInCombat = $game.gameData.event?.inCombat;
+			
+			if (!isAlreadyInCombat) {
+				// SPRAWDŹ CZY NA BIEŻĄCYM TILE JEST WRÓG
+				const playerX = $gameState.player?.x || 0;
+				const playerY = $gameState.player?.y || 0;
+				const regionId = `${playerX.toString().padStart(2, '0')}${playerY.toString().padStart(2, '0')}`;
+				const region = $worldStore?.regions?.[regionId];
 
-			if (region?.enemy?.isEnemy) {
-				const enemy = $worldStore.addedStaticData.enemies[region.enemy.id];
-				console.log('⚔️ ENEMY ENCOUNTER:', enemy);
-				$game.gameData.event.inCombat = true;
-				$game.gameData.enemy = enemy;
-				// You could call gameComponent.triggerCombat(enemy) here if it exists
+				if (region?.enemy?.isEnemy) {
+					console.log('⚔️ ENEMY ENCOUNTER TRIGGERED!');
+					
+					// Pobierz dane wroga
+					let enemy = $worldStore.addedStaticData.enemies[region.enemy.id];
+					
+					if (!enemy) {
+						console.warn('⚠️ Enemy data missing for ID:', region.enemy.id);
+						enemy = {
+							id: region.enemy.id,
+							name: "Unknown Entity",
+							description: "A shadowy figure emerges from the fog.",
+							statistics: {
+								imagePath: "images/enemies/unknown.svg",
+								physicalDamage: 10,
+								armorArmor: "0%"
+							},
+							enemyHp: 50,
+							enemyMaxHp: 50
+						};
+					}
+					
+					// Użyj funkcji z Game.svelte do wymuszenia stanu
+					if (gameComponent.forceCombatState) {
+						gameComponent.forceCombatState(enemy);
+					}
+					
+					// Opcjonalnie: ustaw opis spotkania
+					$game.gameData.story = `A ${enemy.name} appears before you! ${enemy.description || 'It looks dangerous.'}`;
+					
+					// Zamknij panel i zakończ - nie wysyłamy giveAnswer
+					mapOn = false;
+					isPanelOpen = false;
+					return;
+				}
 			}
-
-			gameComponent.giveAnswer(answer);
+			
+			// Jeśli nie ma walki lub jesteśmy w jej trakcie (odpowiedź wewnątrz walki), normalnie wyślij odpowiedź
+			if (gameComponent.giveAnswer) {
+				gameComponent.giveAnswer(answer);
+			}
 			mapOn = false;
 		}
 	}
@@ -223,8 +259,27 @@
 				}
 			}
 		}, 1000);
+
+		// Monitor if player is on a tile with an enemy every 2 seconds
+		const combatCheckInterval = setInterval(() => {
+			if (!$misc.started) return;
+			if ($game.gameData.event?.inCombat) return; // Already in combat
+			
+			const playerX = $gameState.player?.x || 0;
+			const playerY = $gameState.player?.y || 0;
+			const regionId = `${playerX.toString().padStart(2, '0')}${playerY.toString().padStart(2, '0')}`;
+			const region = $worldStore?.regions?.[regionId];
+			
+			if (region?.enemy?.isEnemy) {
+				console.log('⚔️ AUTO-COMBAT TRIGGER!');
+				handleAnswer(''); // Trigger empty answer which will start combat
+			}
+		}, 2000);
 		
-		return () => clearInterval(interval);
+		return () => {
+			clearInterval(interval);
+			clearInterval(combatCheckInterval);
+		};
 	});
 </script>
 

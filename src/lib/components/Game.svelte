@@ -235,6 +235,10 @@ onMount(() => {
 
 			console.log('Parsed gameData:', gameData)
 
+			// Preserve enemy state if forced by frontend
+			const wasInCombat = $game.gameData.event?.inCombat;
+			const currentEnemy = $game.gameData.enemy;
+
 			// Preserve enemy HP
 			let hpOfEnemy = 0
 			if ($game.gameData.enemy?.enemyHp) {
@@ -242,6 +246,14 @@ onMount(() => {
 			}
 
 			$game = { gameData }
+
+			// RE-APPLY FORCED COMBAT STATE IF NECESSARY
+			if (wasInCombat && !$game.gameData.event?.inCombat) {
+				$game.gameData.event.inCombat = true;
+				if (!$game.gameData.enemy || Object.keys($game.gameData.enemy).length === 0) {
+					$game.gameData.enemy = currentEnemy;
+				}
+			}
 
 			if (hpOfEnemy && $game.gameData.enemy?.enemyHp) {
 				$game.gameData.enemy.enemyHp = hpOfEnemy
@@ -313,6 +325,24 @@ onMount(() => {
 				giveAnswer($misc.query)
 			}
 		}, 1000)
+	}
+
+	export function forceCombatState(enemyData: any) {
+		console.log('🔄 Force combat state:', enemyData);
+		game.update(g => {
+			g.gameData.event = { 
+				...g.gameData.event, 
+				inCombat: true,
+				shopMode: null,
+				lootMode: false 
+			};
+			g.gameData.enemy = {
+				...enemyData,
+				enemyHp: enemyData.enemyHp || 50,
+				enemyMaxHp: enemyData.enemyMaxHp || 50
+			};
+			return g;
+		});
 	}
 
 	export function giveAnswer(choice: string) {
@@ -616,7 +646,7 @@ onMount(() => {
 
 					<!-- Choices Section -->
 					<div class="choices-section">
-						{#if $game.gameData.choices && $game.gameData.choices.length > 0}
+						{#if ($game.gameData.choices && $game.gameData.choices.length > 0) || ($game.gameData.event?.inCombat)}
 							<div
 								in:fly={{ y: 20, duration: 600, delay: 200, easing: cubicOut }}
 								style="width: 100%;"
