@@ -8,7 +8,7 @@
 // Language and Learning Settings
 export const LanguageSettingsData = {
 	nativeLanguage: 'English',
-	foreignLanguage: 'Latin',
+	foreignLanguage: 'Czech',
 	languageLevel: 'A1',
 	options: {
 		languages: [

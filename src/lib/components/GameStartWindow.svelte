@@ -5,12 +5,10 @@
 
 	import CharacterClasses from '$lib/components/CharacterClasses.svelte'
 
-	import { misc } from '../../stores'
-	import { character } from '../../stores'
-
 	import medievalTavernStarter from '$lib/gamedata/gamestarters/medievalTavernStarter.json'
 	import WorldCreator from './WorldCreator.svelte'
 	import { LanguageSettingsData } from '$lib/config/constants'
+	import { misc, character, languageSettings } from '../../stores'
 	
 	function getRandomValueFromArray(array: any) {
 		const randomIndex = Math.floor(Math.random() * array?.length)
@@ -84,9 +82,18 @@
 	};
 
 	function saveConfiguration() {
+		// Aktualizuj LanguageSettingsData (dla kompatybilności)
 		LanguageSettingsData.nativeLanguage = tempSettings.nativeLanguage;
 		LanguageSettingsData.foreignLanguage = tempSettings.foreignLanguage;
 		LanguageSettingsData.languageLevel = tempSettings.languageLevel;
+		
+		// Aktualizuj store
+		$languageSettings = {
+			nativeLanguage: tempSettings.nativeLanguage,
+			foreignLanguage: tempSettings.foreignLanguage,
+			languageLevel: tempSettings.languageLevel
+		};
+		
 		transitionTo('menu');
 	}
 

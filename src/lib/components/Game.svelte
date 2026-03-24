@@ -10,7 +10,7 @@
 	import Choices from './Choices.svelte'
 	import BackgroundImgs from './BackgroundImgs.svelte'
 
-	import { game, character, selectedItem, misc, coolDowns, bgImage, ui } from '../../stores'
+	import { game, character, selectedItem, misc, coolDowns, bgImage, ui, languageSettings } from '../../stores'
 	import { supabase } from '$lib/supabaseClient'
 
 	import buyWeapons from '$lib/gamedata/weapons.json'
@@ -70,12 +70,18 @@ export function getMapGridFromGame() {
 	})
 
 	// Game logic functions
+// Game logic functions
 	async function handleSubmit() {
 		$misc.loading = true
 		chatMessages = [...chatMessages, { role: 'user', content: $misc.query }]
 
 		const prompt = chatMessages.length > 0 ? $misc.query : getGamePrompt()
 		console.log('Sending prompt:', prompt)
+
+		// Pobierz aktualne ustawienia językowe z store
+		const currentLang = $languageSettings
+		const language = currentLang.foreignLanguage
+		const languageLevel = currentLang.languageLevel
 
 		const controller = new AbortController()
 		const timeoutId = setTimeout(() => {
@@ -90,7 +96,11 @@ export function getMapGridFromGame() {
 			const response = await fetch('/api/chat', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ prompt }),
+				body: JSON.stringify({ 
+					prompt,
+					language,      // Dodaj język
+					languageLevel  // Dodaj poziom CEFR
+				}),
 				signal: controller.signal // Link the abort signal
 			})
 

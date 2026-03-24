@@ -9,7 +9,7 @@ import type {
 	CoolDowns,
 	InventoryItem
 } from '$lib/types/game'
-import { STARTING_VALUES } from '$lib/config/constants'
+import { STARTING_VALUES, LanguageSettingsData } from '$lib/config/constants'
 
 // Game state store
 export const game: Writable<{ gameData: GameData }> = writable({
@@ -97,4 +97,15 @@ export const descWindow: Writable<DescriptionWindow> = writable({
 	manaCost: 0,
 	price: 0,
 	amount: 0
+})
+
+// Language settings store
+export const languageSettings: Writable<{
+	nativeLanguage: string
+	foreignLanguage: string
+	languageLevel: string
+}> = writable({
+	nativeLanguage: LanguageSettingsData.nativeLanguage,
+	foreignLanguage: LanguageSettingsData.foreignLanguage,
+	languageLevel: LanguageSettingsData.languageLevel
 })
