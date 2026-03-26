@@ -43,6 +43,26 @@
 	import { gameState } from '../../stores';
 	import { FunctionResponseScheduling } from '@google/genai'
 
+	let sentences: string[] = [];
+let sentencesNative: string[] = [];
+let activeSentenceIndex: number | null = null;
+let showTranslationModal = false;
+
+// Reactive: split story into sentences when gameData changes
+$: if ($game.gameData.story) {
+    // Split by dots, question marks, exclamation marks but keep punctuation
+    sentences = $game.gameData.story.split(/(?<=[.!?])\s+/);
+    if ($game.gameData.storyNative) {
+        sentencesNative = $game.gameData.storyNative.split(/(?<=[.!?])\s+/);
+    } else {
+        sentencesNative = [];
+    }
+}
+
+function handleSentenceClick(index: number) {
+    activeSentenceIndex = index;
+    showTranslationModal = true;
+}
 
 	export interface GameState {
 		chatMessages: ChatMessage[];
@@ -567,7 +587,7 @@ onMount(() => {
 			{/if}
 		</div>
 
-		</DescriptionWindow />
+		<DescriptionWindow />
 		<MessageWindows />
 		<ApiKeyModal />
 
