@@ -115,6 +115,47 @@ onMount(() => {
 		console.log('📜 Chat history updated:', newEntry);
 	}
 	
+	async function checkGrammar(text: string) {
+		$gameState.grammarEvaluation = null;
+		try {
+			const res = await fetch('/api/grammar-check', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ 
+					text, 
+					language: $languageSettings.foreignLanguage,
+					languageLevel: $languageSettings.languageLevel
+				})
+			});
+			if (res.ok) {
+				$gameState.grammarEvaluation = await res.json();
+			}
+		} catch (e) {
+			console.error('Grammar check failed:', e);
+		}
+	}
+
+	// Sentence splitting logic
+	let sentences: string[] = [];
+	let sentencesNative: string[] = [];
+	let activeSentenceIndex: number | null = null;
+	let showTranslationModal = false;
+
+	$: if ($game.gameData.story) {
+		// Split by dots but keep the dots
+		sentences = $game.gameData.story.split(/(?<=\.)\s+/);
+		if ($game.gameData.storyNative) {
+			sentencesNative = $game.gameData.storyNative.split(/(?<=\.)\s+/);
+		} else {
+			sentencesNative = [];
+		}
+	}
+
+	function handleSentenceClick(index: number) {
+		activeSentenceIndex = index;
+		showTranslationModal = true;
+	}
+
 	async function handleSubmit() {
 		$misc.loading = true
 		
@@ -127,6 +168,11 @@ onMount(() => {
 			content: userChoice 
 		}]
 
+		// --- SPRAWDZANIE GRAMATYKI (TYLKO JEŚLI TO NIE JEST POCZĄTEK GRY) ---
+		if ($gameState.chatMessages.length > 1) {
+			checkGrammar(userChoice);
+		}
+
 		const prompt = $gameState.chatMessages.length > 0 ? $misc.query : getGamePrompt()
 		console.log('Sending prompt:', prompt)
 
@@ -134,6 +180,7 @@ onMount(() => {
 		const currentLang = $languageSettings
 		const language = currentLang.foreignLanguage
 		const languageLevel = currentLang.languageLevel
+		const nativeLanguage = currentLang.nativeLanguage
 
 		const controller = new AbortController()
 		const timeoutId = setTimeout(() => {
@@ -152,11 +199,13 @@ onMount(() => {
 					prompt,
 					language,
 					languageLevel,
+					nativeLanguage,
 					chatHistory: $gameState.chatHistory,
 					player: $gameState.player
 				}),
 				signal: controller.signal
 			})
+// ... (rest of handleSubmit remains similar but ensure storyNative is handled)
 
 			clearTimeout(timeoutId)
 			$gameState.requestTimeout = false
@@ -636,9 +685,19 @@ onMount(() => {
 									<div class="spinner"></div>
 									<span>Generating Responses{$gameState.dotty}</span>
 								</div>
-							{:else if $game.gameData.story}
+							{:else if sentences.length > 0}
 								<div class="story-text" transition:fade>
-									<LetterByLetter text={$game.gameData.story} />
+									{#each sentences as sentence, i}
+										<span 
+											role="button"
+											tabindex="0"
+											class="clickable-sentence" 
+											on:click={() => handleSentenceClick(i)}
+											on:keydown={(e) => e.key === 'Enter' && handleSentenceClick(i)}
+										>
+											{sentence}{' '}
+										</span>
+									{/each}
 								</div>
 							{/if}
 						</div>
@@ -661,6 +720,21 @@ onMount(() => {
 
 		<DescriptionWindow />
 		<MessageWindows />
+
+		<!-- Translation Modal -->
+		{#if showTranslationModal && activeSentenceIndex !== null}
+			<div class="translation-overlay" on:click={() => showTranslationModal = false} transition:fade>
+				<div class="glass-modal translation-modal" on:click|stopPropagation>
+					<span class="label">NATIVE TRANSLATION</span>
+					<p class="original-text">{sentences[activeSentenceIndex]}</p>
+					<div class="divider"></div>
+					<p class="translation-text">
+						{sentencesNative[activeSentenceIndex] || "Translation not available."}
+					</p>
+					<button class="dismiss-btn" on:click={() => showTranslationModal = false}>CLOSE</button>
+				</div>
+			</div>
+		{/if}
 	{/if}
 
 	<!-- World generation overlay - POZA game-container -->
@@ -923,5 +997,70 @@ onMount(() => {
 		.viewport { padding: 1.2rem; }
 		.story-text { font-size: 0.95rem; }
 		.glass-modal { padding: 2rem; }
+	}
+
+	.clickable-sentence {
+		cursor: pointer;
+		transition: all 0.2s;
+		padding: 0 2px;
+		border-bottom: 1px solid transparent;
+	}
+
+	.clickable-sentence:hover {
+		background: rgba(0, 242, 255, 0.1);
+		color: var(--accent-primary);
+		border-bottom-color: var(--accent-primary);
+	}
+
+	.translation-overlay {
+		position: fixed;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.85);
+		backdrop-filter: blur(12px);
+		z-index: 4000;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 2rem;
+	}
+
+	.translation-modal {
+		max-width: 550px !important;
+		border: 1px solid var(--accent-primary) !important;
+		background: rgba(10, 15, 25, 0.9) !important;
+		text-align: left !important;
+		align-items: flex-start !important;
+	}
+
+	.translation-modal .label {
+		color: var(--accent-primary);
+		font-size: 0.7rem;
+		font-weight: 900;
+		letter-spacing: 0.2em;
+		margin-bottom: 1rem;
+	}
+
+	.original-text {
+		color: var(--text-dim);
+		font-style: italic;
+		font-size: 1rem;
+		margin-bottom: 1.5rem;
+		line-height: 1.6;
+	}
+
+	.divider {
+		width: 100%;
+		height: 1px;
+		background: linear-gradient(90deg, var(--accent-primary), transparent);
+		margin-bottom: 1.5rem;
+		opacity: 0.3;
+	}
+
+	.translation-text {
+		color: #fff;
+		font-size: 1.25rem;
+		font-weight: 700;
+		line-height: 1.4;
+		margin-bottom: 2rem;
 	}
 </style>

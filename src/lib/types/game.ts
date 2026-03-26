@@ -1,6 +1,7 @@
 export interface GameData {
 	placeAndTime: PlaceAndTime
 	story: string
+	storyNative?: string
 	event: GameEvent
 	choices: string[]
 	enemy: Enemy

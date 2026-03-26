@@ -53,20 +53,34 @@
 	in:fade={{ duration: 400 }}
 	out:scale={{ duration: 300, start: 0.95 }}
 >
-	<!-- Choice Buttons -->
-	<div class="choices-list">
-		{#each $game.gameData.choices as choice, i}
-			<button
-				class="choice-btn glass-button"
-				disabled={$misc.loading}
-				in:fly={{ y: 20, duration: 500, delay: i * 100, easing: cubicOut }}
-				out:fly={{ x: -20, duration: 300, delay: i * 60 }}
-				on:click={() => emitAnswer(choice)}
-			>
-				<span class="choice-text">{choice}</span>
-			</button>
-		{/each}
-	</div>
+	<!-- Previous Answer Section -->
+	{#if $gameState.chatMessages.length > 1}
+		{@const lastUserMsg = [...$gameState.chatMessages].reverse().find(m => m.role === 'user')}
+		{#if lastUserMsg}
+			<div class="previous-answer glass-container" in:fly={{ y: -20, duration: 600, easing: cubicOut }}>
+				<div class="prev-header">
+					<span class="label">YOUR LAST ACTION</span>
+					{#if $gameState.grammarEvaluation}
+						<span class="score" style="color: {$gameState.grammarEvaluation.score > 80 ? '#00f2ff' : '#ff3e3e'}">
+							SCORE: {$gameState.grammarEvaluation.score}/100
+						</span>
+					{/if}
+				</div>
+				<p class="prev-text">{lastUserMsg.content}</p>
+				
+				{#if $gameState.grammarEvaluation && $gameState.grammarEvaluation.errors?.length > 0}
+					<div class="grammar-feedback" in:fade>
+						{#each $gameState.grammarEvaluation.errors as error}
+							<div class="error-item">
+								<span class="wrong">{error.text}</span> → <span class="correct">{error.correction}</span>
+								<p class="reason">{error.reason}</p>
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</div>
+		{/if}
+	{/if}
 
 	<!-- Custom Input & Navigation -->
 	<div class="input-controls-container">
@@ -237,4 +251,41 @@
 	.submit-btn:disabled {
 		opacity: 0.3;
 	}
+
+	.previous-answer {
+		margin-bottom: 0.5rem;
+		padding: 1.2rem;
+		background: rgba(255, 255, 255, 0.03);
+		border-radius: 12px;
+		border-left: 4px solid var(--accent-secondary);
+	}
+
+	.prev-header {
+		display: flex;
+		justify-content: space-between;
+		margin-bottom: 0.5rem;
+		font-size: 0.7rem;
+		font-weight: 800;
+		letter-spacing: 0.05em;
+	}
+
+	.label { color: var(--text-dim); }
+	.prev-text { font-size: 0.95rem; color: #fff; line-height: 1.5; margin: 0; }
+
+	.grammar-feedback {
+		margin-top: 1rem;
+		padding-top: 1rem;
+		border-top: 1px solid rgba(255, 255, 255, 0.1);
+		display: flex;
+		flex-direction: column;
+		gap: 0.8rem;
+	}
+
+	.error-item {
+		font-size: 0.85rem;
+	}
+
+	.wrong { color: #ff3e3e; text-decoration: line-through; }
+	.correct { color: #00f2ff; font-weight: 700; }
+	.reason { color: var(--text-dim); font-style: italic; margin-top: 0.2rem; font-size: 0.75rem; }
 </style>

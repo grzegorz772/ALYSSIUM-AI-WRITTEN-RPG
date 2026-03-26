@@ -133,6 +133,7 @@ export const gameState: Writable<{
 	generatingWorld: boolean;
 	answer: string;
 	dotty: string;
+	grammarEvaluation: any | null; // <-- DODAJ
 	player: {
 		gold: number;
 		x: number;

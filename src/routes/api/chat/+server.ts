@@ -8,7 +8,7 @@ const ai = new GoogleGenAI({ apiKey: GOOGLE_AI_API_KEY })
 
 export const POST: RequestHandler = async ({ request }) => {
   try {
-    const { prompt, language, languageLevel, player } = await request.json()
+    const { prompt, language, languageLevel, player, nativeLanguage } = await request.json()
 
     if (!prompt) {
         return json({ error: 'Invalid prompt' }, { status: 400 })
@@ -27,8 +27,9 @@ PLAYER STATUS:
 You are an RPG game master.
 
 LANGUAGE SETTINGS:
-- Generate ALL game text in ${language || 'English'}
-- Use CEFR level: ${languageLevel || 'B1'}
+- Target Language (the language player is learning): ${language || 'English'}
+- Native Language (the language player speaks): ${nativeLanguage || 'Polish'}
+- CEFR level for Target Language: ${languageLevel || 'B1'}
 
 ${playerContext}
 
@@ -38,7 +39,8 @@ FORMAT:
 {
   "gameData": {
     "placeAndTime": { "place": "Location Name", "time": "HH:MM" },
-    "story": "Narrative text",
+    "story": "Narrative text in Target Language",
+    "storyNative": "The SAME Narrative text translated into Native Language",
     "event": { "inCombat": false, "lootMode": false },
     "choices": ["Choice 1", "Choice 2", "Choice 3"],
     "enemy": {},
@@ -47,11 +49,13 @@ FORMAT:
 }
 
 RULES:
-- Always include at least 3 unique choices
-- story should be immersive 3rd person narrative
+- Always include at least 3 unique choices (even though they might be hidden in UI, keep them for backend logic if needed, but the primary interaction will be custom input)
+- story should be immersive 3rd person narrative in ${language || 'English'}
+- storyNative MUST be the exact translation of story into ${nativeLanguage || 'Polish'}
 - When in combat, set inCombat to true and populate enemy with {name, enemyHp, enemyMaxHp, imagePath}
 - NEVER include markdown code blocks or any text outside the JSON
-- ALL TEXT MUST BE IN ${(language || 'English').toUpperCase()} AT CEFR LEVEL ${languageLevel || 'B1'}
+- story TEXT MUST BE IN ${(language || 'English').toUpperCase()} AT CEFR LEVEL ${languageLevel || 'B1'}
+- storyNative TEXT MUST BE IN ${(nativeLanguage || 'Polish').toUpperCase()}
 `
 
     const finalPrompt = `
@@ -60,7 +64,7 @@ ${systemInstruction}
 USER INPUT:
 ${prompt}
 
-Remember: Generate all text in ${language || 'English'} at CEFR ${languageLevel || 'B1'} level. JSON only.
+Remember: story in ${language || 'English'} (CEFR ${languageLevel || 'B1'}), storyNative in ${nativeLanguage || 'Polish'}. JSON only.
 `
 
     const response = await ai.models.generateContent({
