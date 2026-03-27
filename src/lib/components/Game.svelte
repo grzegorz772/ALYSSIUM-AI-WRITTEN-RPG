@@ -861,8 +861,8 @@ onMount(() => {
 	/* Responsive */
 	@media (max-width: 768px) {
 		.game-container { padding: 1rem; }
-		.main-content-layer { gap: 1.5rem; padding-bottom: 140px; }
-		.story-section { min-height: 180px; }
+		.main-content-layer { gap: 1rem; padding-bottom: 100px; }
+		.story-section { min-height: 150px; max-height: 35vh; }
 		.module-header { padding: 0.8rem 1.2rem; }
 		.viewport { padding: 1.2rem; }
 		.story-text { font-size: 0.95rem; }

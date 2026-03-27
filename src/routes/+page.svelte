@@ -592,7 +592,6 @@
 		flex-direction: column;
 		background: #050508;
 		position: relative;
-		overflow: hidden;
 	}
 	
 	.game-content {

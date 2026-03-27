@@ -144,6 +144,47 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.choice-btn {
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: 12px;
+		padding: 0.8rem 1rem;
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		cursor: pointer;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		text-align: left;
+		width: 100%;
+	}
+
+	.choice-btn:hover {
+		background: rgba(0, 242, 255, 0.1);
+		border-color: #00f2ff;
+		transform: translateX(5px);
+	}
+
+	.choice-number {
+		font-size: 0.7rem;
+		font-weight: 900;
+		color: #00f2ff;
+		background: rgba(0, 242, 255, 0.1);
+		width: 20px;
+		height: 20px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 4px;
+		flex-shrink: 0;
+	}
+
+	.choice-text {
+		font-size: 0.9rem;
+		color: #e0e0e0;
+		font-weight: 500;
 	}
 
 	.input-controls-container {
@@ -226,6 +267,40 @@
 
 	.submit-btn:disabled {
 		opacity: 0.3;
+	}
+
+	@media (max-width: 600px) {
+		.choices-panel {
+			padding: 1rem;
+		}
+		
+		.choice-btn {
+			padding: 0.7rem;
+		}
+
+		.choice-text {
+			font-size: 0.85rem;
+		}
+
+		.input-controls-container {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.d-pad {
+			flex-direction: row;
+			justify-content: center;
+			margin-bottom: 0.5rem;
+		}
+
+		.nav-row {
+			gap: 5px;
+		}
+		
+		.nav-btn {
+			width: 40px;
+			height: 40px;
+		}
 	}
 
 	.previous-answer {

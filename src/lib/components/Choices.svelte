@@ -85,7 +85,7 @@
 
 <style>
 	.ui-mid {
-		height: 100%;
+		height: auto;
 		width: 100%;
 		display: flex;
 		flex-direction: column;
